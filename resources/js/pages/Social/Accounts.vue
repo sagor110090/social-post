@@ -413,47 +413,43 @@ onMounted(() => {
                 </div>
 
                 <!-- Help Section -->
-                <Card class="mt-8">
-                    <CardHeader>
-                        <CardTitle>Need Help?</CardTitle>
-                        <CardDescription>
-                            Learn more about connecting your social media
-                            accounts
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div class="flex items-start gap-3">
-                                <ExternalLinkIcon
-                                    class="mt-0.5 h-5 w-5 text-gray-400"
-                                />
-                                <div>
-                                    <h4 class="font-medium text-gray-900">
-                                        Developer Accounts
-                                    </h4>
-                                    <p class="text-sm text-gray-600">
-                                        You'll need developer accounts for each
-                                        platform to connect them.
-                                    </p>
-                                </div>
+                <div class="card-elevated relative overflow-hidden mt-12 animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                    <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-amber-500 to-orange-500"></div>
+                    <div class="mb-6">
+                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">Need Help?</h2>
+                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                            Learn more about connecting your social media accounts
+                        </p>
+                    </div>
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+                                <ExternalLinkIcon class="h-5 w-5 text-white" />
                             </div>
-                            <div class="flex items-start gap-3">
-                                <ExternalLinkIcon
-                                    class="mt-0.5 h-5 w-5 text-gray-400"
-                                />
-                                <div>
-                                    <h4 class="font-medium text-gray-900">
-                                        Permissions
-                                    </h4>
-                                    <p class="text-sm text-gray-600">
-                                        We only request permissions needed for
-                                        posting and analytics.
-                                    </p>
-                                </div>
+                            <div>
+                                <h3 class="text-headline-4 font-semibold text-neutral-900 dark:text-white mb-2">
+                                    Developer Accounts
+                                </h3>
+                                <p class="text-body text-neutral-600 dark:text-neutral-400">
+                                    You'll need developer accounts for each platform to connect them.
+                                </p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+                                <ExternalLinkIcon class="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h3 class="text-headline-4 font-semibold text-neutral-900 dark:text-white mb-2">
+                                    Permissions
+                                </h3>
+                                <p class="text-body text-neutral-600 dark:text-neutral-400">
+                                    We only request permissions needed for posting and analytics.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         </div>

@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\CheckSubscription;
+
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\HasSocialAccount;
@@ -24,11 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias([
-            'subscription' => CheckSubscription::class,
-            'social.account' => HasSocialAccount::class,
-        ]);
+        $middleware->validateCsrfTokens(except: [
+          'api/*',
+      ]);
+
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+
+    ->create();

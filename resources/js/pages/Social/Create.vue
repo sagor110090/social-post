@@ -9,17 +9,60 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { AlertCircle, CheckCircle, PlusCircle } from 'lucide-vue-next';
+import { AlertCircle, CheckCircle, PlusCircle, Clock, Eye, Send } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 
-const props = defineProps({
-    availablePlatforms: Array,
-    characterLimits: Object,
-    errors: Object,
-    flash: Object,
-});
+// Type definitions
+interface Platform {
+    name: string;
+    provider: string;
+    icon: any;
+    color: string;
+    description: string;
+    features: string[];
+}
 
-const form = ref({
+interface CharacterLimits {
+    [key: string]: number;
+}
+
+interface CharacterCount {
+    character_count: number;
+    valid: boolean;
+}
+
+interface ValidationErrors {
+    [key: string]: string[];
+}
+
+interface Flash {
+    success?: string;
+    error?: string;
+}
+
+interface MediaFile {
+    url: string;
+    mime_type: string;
+}
+
+const props = defineProps<{
+    availablePlatforms?: string[];
+    characterLimits?: CharacterLimits;
+    errors?: ValidationErrors;
+    flash?: Flash;
+}>();
+
+interface FormData {
+    content: string;
+    platforms: string[];
+    link: string;
+    image_url: string;
+    media_urls: string[];
+    schedule_at: string;
+}
+
+const form = ref<FormData>({
     content: '',
     platforms: [],
     link: '',
@@ -46,7 +89,7 @@ const maxCharacterLimit = computed(() => {
     if (selectedPlatforms.value.length === 0) return 280;
     return Math.min(
         ...selectedPlatforms.value.map(
-            (platform) => props.characterLimits[platform] || 280,
+            (platform) => props.characterLimits?.[platform] || 280,
         ),
     );
 });
@@ -67,7 +110,7 @@ const canPublish = computed(() => {
     );
 });
 
-const platformIcons = {
+const platformIcons: Record<string, string> = {
     facebook: '📘',
     instagram: '📷',
     linkedin: '💼',
@@ -100,7 +143,7 @@ const validateContent = () => {
     );
 };
 
-const handleMediaUploadSuccess = () => {
+const handleMediaUploadSuccess = (response: MediaFile) => {
     // Store uploaded media URLs
     if (!form.value.media_urls) {
         form.value.media_urls = [];
@@ -113,12 +156,12 @@ const handleMediaUploadSuccess = () => {
     }
 };
 
-const handleMediaUploadError = (error) => {
+const handleMediaUploadError = (error: any) => {
     console.error('Media upload error:', error);
     // You could show a toast notification here
 };
 
-const handleMediaRemoved = (file) => {
+const handleMediaRemoved = (file: MediaFile) => {
     // Remove from media URLs
     if (form.value.media_urls) {
         const index = form.value.media_urls.indexOf(file.url);
@@ -139,7 +182,7 @@ const publishPost = () => {
 
     isPublishing.value = true;
 
-    const postData = {
+    const postData: any = {
         content: form.value.content,
         platforms: form.value.platforms,
         link: form.value.link || undefined,
@@ -173,7 +216,7 @@ const publishPost = () => {
     });
 };
 
-const togglePlatform = (platform) => {
+const togglePlatform = (platform: string) => {
     const index = form.value.platforms.indexOf(platform);
     if (index > -1) {
         form.value.platforms.splice(index, 1);
@@ -187,19 +230,19 @@ const togglePlatform = (platform) => {
     }
 };
 
-const getCharacterCountText = (platform) => {
-    const count = characterCounts.value[platform];
-    if (!count) return '0/' + (props.characterLimits[platform] || 280);
+const getCharacterCountText = (platform: string) => {
+    const count = characterCounts.value[platform] as CharacterCount | undefined;
+    if (!count) return '0/' + (props.characterLimits?.[platform] || 280);
 
-    const limit = props.characterLimits[platform] || 280;
+    const limit = props.characterLimits?.[platform] || 280;
     return `${count.character_count}/${limit}`;
 };
 
-const getCharacterCountColor = (platform) => {
-    const count = characterCounts.value[platform];
+const getCharacterCountColor = (platform: string) => {
+    const count = characterCounts.value[platform] as CharacterCount | undefined;
     if (!count) return 'text-neutral-500 dark:text-neutral-400';
 
-    const limit = props.characterLimits[platform] || 280;
+    const limit = props.characterLimits?.[platform] || 280;
     const percentage = (count.character_count / limit) * 100;
 
     if (percentage > 90) return 'text-red-600 dark:text-red-400';
@@ -207,8 +250,8 @@ const getCharacterCountColor = (platform) => {
     else return 'text-green-600 dark:text-green-400';
 };
 
-const getPlatformDisplayName = (platform) => {
-    const names = {
+const getPlatformDisplayName = (platform: string) => {
+    const names: Record<string, string> = {
         facebook: 'Facebook Page',
         instagram: 'Instagram Profile',
         linkedin: 'LinkedIn Profile',
@@ -217,7 +260,7 @@ const getPlatformDisplayName = (platform) => {
     return names[platform] || platform;
 };
 
-const setScheduleTime = (time) => {
+const setScheduleTime = (time: string) => {
     const date = form.value.schedule_at
         ? new Date(form.value.schedule_at)
         : new Date();
@@ -247,40 +290,29 @@ onMounted(() => {
     <Head title="Create Post" />
 
     <AppLayout>
-        <div class="min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <div class="min-h-screen">
             <div class="p-6">
                 <div class="mx-auto max-w-7xl">
-                    <!-- Enhanced Header -->
-                    <div class="animate-fade-in mb-12 text-center">
-                        <h1 class="text-display-1 mb-6 text-foreground">
-                            Create
-                            <span class="text-gradient font-bold"
-                                >Amazing Content</span
-                            >
-                            ✨
+                    <!-- Header -->
+                    <div class="mb-12 animate-fade-in">
+                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
+                            Create <span class="text-gradient font-bold">New Post</span> ✍️
                         </h1>
-                        <p
-                            class="text-body-large mx-auto max-w-3xl leading-relaxed text-muted-foreground"
-                        >
-                            Craft compelling posts and publish them across all
-                            your connected social media platforms with ease.
+                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                            Craft compelling posts and publish them across all your connected social media platforms with ease.
                         </p>
                     </div>
 
-                    <!-- Enhanced Flash Messages -->
+                    <!-- Flash Messages -->
                     <div
                         v-if="flash?.success"
-                        class="animate-slide-up mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
+                        class="mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-emerald-800/60 dark:bg-emerald-900/30"
                     >
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500 shadow-lg"
-                            >
-                                <CheckCircle class="h-6 w-6 text-white" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500">
+                                <CheckCircle class="h-5 w-5 text-white" />
                             </div>
-                            <p
-                                class="text-body-large font-medium text-emerald-800 dark:text-emerald-200"
-                            >
+                            <p class="text-body-large font-medium text-emerald-800 dark:text-emerald-200">
                                 {{ flash.success }}
                             </p>
                         </div>
@@ -288,17 +320,13 @@ onMounted(() => {
 
                     <div
                         v-if="flash?.error"
-                        class="animate-slide-up mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm dark:border-red-800/60 dark:bg-red-900/30"
+                        class="mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-red-800/60 dark:bg-red-900/30"
                     >
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500 shadow-lg"
-                            >
-                                <AlertCircleIcon class="h-6 w-6 text-white" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500">
+                                <AlertCircle class="h-5 w-5 text-white" />
                             </div>
-                            <p
-                                class="text-body-large font-medium text-red-800 dark:text-red-200"
-                            >
+                            <p class="text-body-large font-medium text-red-800 dark:text-red-200">
                                 {{ flash.error }}
                             </p>
                         </div>
@@ -307,21 +335,15 @@ onMounted(() => {
                     <div class="grid gap-8 lg:grid-cols-3">
                         <!-- Main Content -->
                         <div class="space-y-8 lg:col-span-2">
-                            <!-- Enhanced Content Input -->
-                            <div
-                                class="rounded-xl border bg-card text-card-foreground shadow-sm"
-                            >
+                            <!-- Content Input -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-purple-500 to-pink-500"></div>
                                 <div class="mb-6">
-                                    <h2
-                                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
-                                    >
+                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
                                         Content Creation
                                     </h2>
-                                    <p
-                                        class="text-body text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        Write your post content. Character
-                                        limits vary by platform.
+                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                        Write your post content. Character limits vary by platform.
                                     </p>
                                 </div>
 
@@ -554,21 +576,15 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <!-- Enhanced Media & Links -->
-                            <div
-                                class="rounded-xl border bg-card text-card-foreground shadow-sm"
-                            >
+                            <!-- Media & Links -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
                                 <div class="mb-6">
-                                    <h2
-                                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
-                                    >
+                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
                                         Media & Links
                                     </h2>
-                                    <p
-                                        class="text-body text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        Add images, videos, or links to make
-                                        your post more engaging (optional).
+                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                        Add images, videos, or links to make your post more engaging (optional).
                                     </p>
                                 </div>
 
@@ -697,25 +713,16 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <!-- Enhanced Scheduling -->
-                            <div
-                                class="rounded-xl border bg-card text-card-foreground shadow-sm"
-                            >
-                                <div
-                                    class="mb-6 flex items-start justify-between"
-                                >
+                            <!-- Scheduling -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-green-500 to-emerald-500"></div>
+                                <div class="mb-6 flex items-start justify-between">
                                     <div>
-                                        <h2
-                                            class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
-                                        >
+                                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
                                             Schedule Post
                                         </h2>
-                                        <p
-                                            class="text-body text-neutral-600 dark:text-neutral-400"
-                                        >
-                                            Schedule your post to be published
-                                            at the perfect time for maximum
-                                            engagement.
+                                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                            Schedule your post to be published at the perfect time for maximum engagement.
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-3">
@@ -853,21 +860,16 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Enhanced Sidebar -->
+                        <!-- Sidebar -->
                         <div class="space-y-8">
-                            <!-- Enhanced Platform Selection -->
-                            <div
-                                class="rounded-xl border bg-card text-card-foreground shadow-sm"
-                            >
+                            <!-- Platform Selection -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-amber-500 to-orange-500"></div>
                                 <div class="mb-6">
-                                    <h2
-                                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
-                                    >
+                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
                                         Select Platforms
                                     </h2>
-                                    <p
-                                        class="text-body text-neutral-600 dark:text-neutral-400"
-                                    >
+                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
                                         Choose where to publish your post.
                                     </p>
                                 </div>
@@ -1002,19 +1004,14 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <!-- Enhanced Character Limits Reference -->
-                            <div
-                                class="rounded-xl border bg-card text-card-foreground shadow-sm"
-                            >
+                            <!-- Character Limits Reference -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                                 <div class="mb-4">
-                                    <h3
-                                        class="text-headline-4 mb-2 text-neutral-900 dark:text-white"
-                                    >
+                                    <h3 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
                                         Platform Limits
                                     </h3>
-                                    <p
-                                        class="text-body-small text-neutral-600 dark:text-neutral-400"
-                                    >
+                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
                                         Character limits for each platform
                                     </p>
                                 </div>
@@ -1045,10 +1042,9 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <!-- Enhanced Publish Button -->
-                            <div
-                                class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm"
-                            >
+                            <!-- Publish Button -->
+                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
+                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
                                 <Button
                                     class="btn-primary w-full py-4 text-base font-semibold"
                                     size="lg"
