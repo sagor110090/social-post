@@ -71,11 +71,11 @@ const platformIcons = {
 };
 
 const statusColors = {
-    draft: 'bg-gray-100 text-gray-800',
-    scheduled: 'bg-blue-100 text-blue-800',
-    published: 'bg-green-100 text-green-800',
-    partially_published: 'bg-yellow-100 text-yellow-800',
-    failed: 'bg-red-100 text-red-800',
+    draft: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200',
+    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    partially_published: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
 const statusIcons = {
@@ -178,48 +178,54 @@ onMounted(() => {
     <Head title="Post History" />
 
     <AppLayout>
-        <div class="py-12">
-            <div class="mx-auto max-w-6xl sm:px-6 lg:px-8">
-                <!-- Header -->
-                <div class="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">
-                            Post History
+        <div class="min-h-screen">
+            <div class="p-6">
+                <div class="mx-auto max-w-7xl">
+                    <!-- Header -->
+                    <div class="mb-12 animate-fade-in">
+                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
+                            Post <span class="text-gradient font-bold">History</span> 📝
                         </h1>
-                        <p class="mt-2 text-gray-600">
-                            View and manage your published and scheduled posts.
+                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                            View and manage your published and scheduled posts across all platforms.
                         </p>
+                        <div class="flex gap-4 mt-6">
+                            <Button
+                                variant="outline"
+                                class="hover-glow"
+                                @click="refreshPosts"
+                                :disabled="loading"
+                            >
+                                <RefreshCwIcon
+                                    class="mr-3 h-5 w-5"
+                                    :class="{ 'animate-spin': loading }"
+                                />
+                                Refresh
+                            </Button>
+                            <Button
+                                as-child
+                                class="btn-primary hover-glow"
+                            >
+                                <a href="/social/posts/create">Create New Post</a>
+                            </Button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <Button
-                            variant="outline"
-                            @click="refreshPosts"
-                            :disabled="loading"
-                        >
-                            <RefreshCwIcon
-                                class="mr-2 h-4 w-4"
-                                :class="{ 'animate-spin': loading }"
-                            />
-                            Refresh
-                        </Button>
-                        <Button as-child>
-                            <a href="/social/posts/create">Create New Post</a>
-                        </Button>
-                    </div>
-                </div>
 
-                <!-- Filters -->
-                <Card class="mb-6">
-                    <CardHeader>
-                        <CardTitle class="flex items-center gap-2">
-                            <FilterIcon class="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="grid gap-4 md:grid-cols-4">
-                            <div>
-                                <Label for="status-filter">Status</Label>
+                    <!-- Filters -->
+                    <div class="card-elevated relative overflow-hidden mb-12 animate-slide-up">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                        <div class="mb-6">
+                            <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white flex items-center gap-3">
+                                <FilterIcon class="h-6 w-6" />
+                                Filters
+                            </h2>
+                            <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                Filter posts by status, platform, or adjust pagination
+                            </p>
+                        </div>
+                        <div class="grid gap-6 md:grid-cols-4">
+                            <div class="space-y-2">
+                                <Label for="status-filter" class="text-body font-medium">Status</Label>
                                 <Select
                                     v-model="filters.status"
                                     @update:modelValue="applyFilters"
@@ -241,8 +247,8 @@ onMounted(() => {
                                 </Select>
                             </div>
 
-                            <div>
-                                <Label for="platform-filter">Platform</Label>
+                            <div class="space-y-2">
+                                <Label for="platform-filter" class="text-body font-medium">Platform</Label>
                                 <Select
                                     v-model="filters.platform"
                                     @update:modelValue="applyFilters"
@@ -264,8 +270,8 @@ onMounted(() => {
                                 </Select>
                             </div>
 
-                            <div>
-                                <Label for="limit">Posts per page</Label>
+                            <div class="space-y-2">
+                                <Label for="limit" class="text-body font-medium">Posts per page</Label>
                                 <Select
                                     v-model="filters.limit"
                                     @update:modelValue="applyFilters"
@@ -287,6 +293,7 @@ onMounted(() => {
                             <div class="flex items-end">
                                 <Button
                                     variant="outline"
+                                    class="hover-glow"
                                     @click="
                                         filters = {
                                             status: '',
@@ -301,193 +308,187 @@ onMounted(() => {
                                 </Button>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-
-                <!-- Posts List -->
-                <div class="space-y-4">
-                    <div
-                        v-if="filteredPosts.length === 0"
-                        class="py-12 text-center"
-                    >
-                        <div class="mb-4 text-gray-400">
-                            <CalendarIcon class="mx-auto h-12 w-12" />
-                        </div>
-                        <h3 class="mb-2 text-lg font-medium text-gray-900">
-                            No posts found
-                        </h3>
-                        <p class="mb-4 text-gray-500">
-                            {{
-                                filters.status || filters.platform
-                                    ? 'Try adjusting your filters'
-                                    : 'Get started by creating your first post'
-                            }}
-                        </p>
-                        <Button
-                            as-child
-                            v-if="!filters.status && !filters.platform"
-                        >
-                            <a href="/social/posts/create">Create Post</a>
-                        </Button>
                     </div>
 
-                    <Card
-                        v-for="post in filteredPosts"
-                        :key="post.id"
-                        class="transition-shadow hover:shadow-md"
-                    >
-                        <CardContent class="p-6">
-                            <div class="mb-4 flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="mb-2 flex items-center gap-2">
-                                        <Badge
-                                            :class="statusColors[post.status]"
-                                            class="flex items-center gap-1"
-                                        >
-                                            <component
-                                                :is="statusIcons[post.status]"
-                                                class="h-3 w-3"
-                                            />
-                                            {{ post.status.replace('_', ' ') }}
-                                        </Badge>
+                    <!-- Posts List -->
+                    <div class="space-y-6">
+                        <div
+                            v-if="filteredPosts.length === 0"
+                            class="card-elevated relative overflow-hidden py-12 text-center animate-slide-up"
+                        >
+                            <div class="mb-6 text-neutral-400 dark:text-neutral-500">
+                                <CalendarIcon class="mx-auto h-16 w-16" />
+                            </div>
+                            <h3 class="mb-3 text-headline-2 text-neutral-900 dark:text-white">
+                                No posts found
+                            </h3>
+                            <p class="mb-6 text-body-large text-neutral-600 dark:text-neutral-400">
+                                {{
+                                    filters.status || filters.platform
+                                        ? 'Try adjusting your filters'
+                                        : 'Get started by creating your first post'
+                                }}
+                            </p>
+                            <Button
+                                as-child
+                                class="btn-primary hover-glow"
+                                v-if="!filters.status && !filters.platform"
+                            >
+                                <a href="/social/posts/create">Create Post</a>
+                            </Button>
+                        </div>
 
-                                        <div class="flex gap-1">
-                                            <span
-                                                v-for="platform in post.platforms"
-                                                :key="platform"
-                                                class="text-lg"
+                        <div
+                            v-for="post in filteredPosts"
+                            :key="post.id"
+                            class="card-elevated relative overflow-hidden group hover:scale-[1.01] transition-all duration-300 animate-slide-up"
+                        >
+                            <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                 :class="post.status === 'published' ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                                        post.status === 'scheduled' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' :
+                                        post.status === 'failed' ? 'bg-gradient-to-r from-red-500 to-pink-500' :
+                                        'bg-gradient-to-r from-gray-500 to-gray-600'"></div>
+                            <div class="p-6">
+                                <div class="mb-4 flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="mb-3 flex items-center gap-3">
+                                            <Badge
+                                                :class="statusColors[post.status]"
+                                                class="flex items-center gap-2 px-3 py-1"
                                             >
-                                                {{ platformIcons[platform] }}
+                                                <component
+                                                    :is="statusIcons[post.status]"
+                                                    class="h-4 w-4"
+                                                />
+                                                {{ post.status.replace('_', ' ') }}
+                                            </Badge>
+
+                                            <div class="flex gap-2">
+                                                <span
+                                                    v-for="platform in post.platforms"
+                                                    :key="platform"
+                                                    class="text-xl"
+                                                >
+                                                    {{ platformIcons[platform] }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <p
+                                            class="mb-3 whitespace-pre-wrap text-body-large text-neutral-900 dark:text-neutral-100 leading-relaxed"
+                                        >
+                                            {{ truncateText(post.content, 200) }}
+                                        </p>
+
+                                        <div
+                                            v-if="post.link || post.image_url"
+                                            class="mb-3 flex gap-6 text-body text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            <span
+                                                v-if="post.link"
+                                                class="flex items-center gap-2"
+                                            >
+                                                <ExternalLinkIcon class="h-4 w-4" />
+                                                Link included
+                                            </span>
+                                            <span
+                                                v-if="post.image_url"
+                                                class="flex items-center gap-2"
+                                            >
+                                                <EyeIcon class="h-4 w-4" />
+                                                Image included
+                                            </span>
+                                        </div>
+
+                                        <div class="text-body text-neutral-500 dark:text-neutral-400">
+                                            Created {{ formatDate(post.created_at) }}
+                                            <span
+                                                v-if="post.scheduled_at"
+                                                class="ml-2"
+                                            >
+                                                • Scheduled for {{ formatDateTime(post.scheduled_at) }}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <p
-                                        class="mb-2 whitespace-pre-wrap text-gray-900"
-                                    >
-                                        {{ truncateText(post.content, 200) }}
-                                    </p>
-
-                                    <div
-                                        v-if="post.link || post.image_url"
-                                        class="mb-2 flex gap-4 text-sm text-gray-500"
-                                    >
-                                        <span
-                                            v-if="post.link"
-                                            class="flex items-center gap-1"
+                                    <div class="ml-6 flex gap-3">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            class="hover-glow"
+                                            as-child
                                         >
-                                            <ExternalLinkIcon class="h-3 w-3" />
-                                            Link included
-                                        </span>
-                                        <span
-                                            v-if="post.image_url"
-                                            class="flex items-center gap-1"
+                                            <a :href="`/social/posts/${post.id}`">
+                                                <EyeIcon class="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            class="hover:border-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            @click="confirmDelete(post)"
+                                            :disabled="deleting"
                                         >
-                                            <EyeIcon class="h-3 w-3" />
-                                            Image included
-                                        </span>
-                                    </div>
-
-                                    <div class="text-sm text-gray-500">
-                                        Created
-                                        {{ formatDate(post.created_at) }}
-                                        <span
-                                            v-if="post.scheduled_at"
-                                            class="ml-2"
-                                        >
-                                            • Scheduled for
-                                            {{
-                                                formatDateTime(
-                                                    post.scheduled_at,
-                                                )
-                                            }}
-                                        </span>
+                                            <TrashIcon class="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
 
-                                <div class="ml-4 flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        as-child
-                                    >
-                                        <a :href="`/social/posts/${post.id}`">
-                                            <EyeIcon class="h-4 w-4" />
-                                        </a>
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        @click="confirmDelete(post)"
-                                        :disabled="deleting"
-                                    >
-                                        <TrashIcon class="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <!-- Platform Results -->
-                            <div
-                                v-if="hasSuccessfulPost(post)"
-                                class="border-t pt-4"
-                            >
-                                <h4
-                                    class="mb-2 text-sm font-medium text-gray-900"
+                                <!-- Platform Results -->
+                                <div
+                                    v-if="hasSuccessfulPost(post)"
+                                    class="border-t border-neutral-200/60 dark:border-neutral-700/60 pt-4"
                                 >
-                                    Published Links:
-                                </h4>
-                                <div class="flex flex-wrap gap-2">
-                                    <a
-                                        v-for="(
-                                            result, platform
-                                        ) in getPlatformResults(post)"
-                                        :key="platform"
-                                        v-if="result.url"
-                                        :href="result.url"
-                                        target="_blank"
-                                        class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                                    <h4
+                                        class="mb-3 text-headline-4 font-medium text-neutral-900 dark:text-white"
                                     >
-                                        <span>{{
-                                            platformIcons[platform]
-                                        }}</span>
-                                        View on
-                                        {{
-                                            platform.charAt(0).toUpperCase() +
-                                            platform.slice(1)
-                                        }}
-                                        <ExternalLinkIcon class="h-3 w-3" />
-                                    </a>
+                                        Published Links:
+                                    </h4>
+                                    <div class="flex flex-wrap gap-3">
+                                        <a
+                                            v-for="(
+                                                result, platform
+                                            ) in getPlatformResults(post)"
+                                            :key="platform"
+                                            v-if="result.url"
+                                            :href="result.url"
+                                            target="_blank"
+                                            class="inline-flex items-center gap-2 text-body text-blue-600 dark:text-blue-400 hover:underline px-3 py-1 rounded-full border border-blue-200/60 bg-blue-50/80 dark:border-blue-800/60 dark:bg-blue-900/30"
+                                        >
+                                            <span class="text-lg">{{
+                                                platformIcons[platform]
+                                            }}</span>
+                                            View on {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
+                                            <ExternalLinkIcon class="h-3 w-3" />
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
+                    </div>
 
-                <!-- Load More -->
-                <div v-if="pagination.has_more" class="mt-6 text-center">
-                    <Button
-                        variant="outline"
-                        @click="loadMore"
-                        :disabled="loading"
+                    <!-- Load More -->
+                    <div v-if="pagination.has_more" class="mt-8 text-center">
+                        <Button
+                            variant="outline"
+                            class="hover-glow"
+                            @click="loadMore"
+                            :disabled="loading"
+                        >
+                            <span v-if="loading">Loading...</span>
+                            <span v-else>Load More</span>
+                        </Button>
+                    </div>
+
+                    <!-- Pagination Info -->
+                    <div
+                        v-if="pagination.total > 0"
+                        class="mt-8 text-center text-body text-neutral-600 dark:text-neutral-400"
                     >
-                        <span v-if="loading">Loading...</span>
-                        <span v-else>Load More</span>
-                    </Button>
-                </div>
-
-                <!-- Pagination Info -->
-                <div
-                    v-if="pagination.total > 0"
-                    class="mt-6 text-center text-sm text-gray-500"
-                >
-                    Showing
-                    {{ Math.min(pagination.offset + 1, pagination.total) }}-{{
-                        Math.min(
-                            pagination.offset + pagination.limit,
-                            pagination.total,
-                        )
-                    }}
-                    of {{ pagination.total }} posts
+                        Showing {{ Math.min(pagination.offset + 1, pagination.total) }}-{{
+                            Math.min(pagination.offset + pagination.limit, pagination.total)
+                        }} of {{ pagination.total }} posts
+                    </div>
                 </div>
             </div>
         </div>
@@ -495,33 +496,37 @@ onMounted(() => {
         <!-- Delete Confirmation Dialog -->
         <div
             v-if="showDeleteDialog"
-            class="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black"
+            class="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
         >
-            <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6">
-                <h3 class="mb-4 text-lg font-medium text-gray-900">
-                    Delete Post
-                </h3>
-                <p class="mb-6 text-gray-600">
-                    Are you sure you want to delete this post? This action
-                    cannot be undone.
-                </p>
+            <div class="card-elevated mx-4 w-full max-w-md overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-pink-500"></div>
+                <div class="p-6">
+                    <h3 class="mb-4 text-headline-2 text-neutral-900 dark:text-white">
+                        Delete Post
+                    </h3>
+                    <p class="mb-6 text-body-large text-neutral-600 dark:text-neutral-400">
+                        Are you sure you want to delete this post? This action cannot be undone.
+                    </p>
 
-                <div class="flex justify-end gap-3">
-                    <Button
-                        variant="outline"
-                        @click="showDeleteDialog = false"
-                        :disabled="deleting"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        @click="deletePost"
-                        :disabled="deleting"
-                    >
-                        <span v-if="deleting">Deleting...</span>
-                        <span v-else>Delete Post</span>
-                    </Button>
+                    <div class="flex justify-end gap-3">
+                        <Button
+                            variant="outline"
+                            class="hover-glow"
+                            @click="showDeleteDialog = false"
+                            :disabled="deleting"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            class="hover-glow"
+                            @click="deletePost"
+                            :disabled="deleting"
+                        >
+                            <span v-if="deleting">Deleting...</span>
+                            <span v-else>Delete Post</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

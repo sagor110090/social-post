@@ -151,141 +151,153 @@ onMounted(() => {
     <Head title="Social Accounts" />
 
     <AppLayout>
-        <div class="py-12">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <!-- Header -->
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        Social Media Accounts
-                    </h1>
-                    <p class="mt-2 text-gray-600">
-                        Connect your social media accounts to start posting
-                        content across platforms.
-                    </p>
-                </div>
+        <div class="min-h-screen">
+            <div class="p-6">
+                <div class="mx-auto max-w-7xl">
+                    <!-- Header -->
+                    <div class="mb-12 animate-fade-in">
+                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
+                            Social Media <span class="text-gradient font-bold">Accounts</span> 🌐
+                        </h1>
+                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                            Connect your social media accounts to start posting
+                            content across platforms.
+                        </p>
+                    </div>
 
                 <!-- Flash Messages -->
-                <Alert
+                <div
                     v-if="flash?.success"
-                    class="mb-6 border-green-200 bg-green-50"
+                    class="mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-emerald-800/60 dark:bg-emerald-900/30"
                 >
-                    <CheckCircleIcon class="h-4 w-4 text-green-600" />
-                    <AlertDescription class="text-green-800">
-                        {{ flash.success }}
-                    </AlertDescription>
-                </Alert>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500">
+                            <CheckCircleIcon class="h-5 w-5 text-white" />
+                        </div>
+                        <p class="text-body-large font-medium text-emerald-800 dark:text-emerald-200">
+                            {{ flash.success }}
+                        </p>
+                    </div>
+                </div>
 
-                <Alert
+                <div
                     v-if="flash?.error"
-                    class="mb-6 border-red-200 bg-red-50"
+                    class="mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-red-800/60 dark:bg-red-900/30"
                 >
-                    <XCircleIcon class="h-4 w-4 text-red-600" />
-                    <AlertDescription class="text-red-800">
-                        {{ flash.error }}
-                    </AlertDescription>
-                </Alert>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500">
+                            <XCircleIcon class="h-5 w-5 text-white" />
+                        </div>
+                        <p class="text-body-large font-medium text-red-800 dark:text-red-200">
+                            {{ flash.error }}
+                        </p>
+                    </div>
+                </div>
 
                 <!-- Connected Accounts Summary -->
-                <Card class="mb-8">
-                    <CardHeader>
-                        <CardTitle>Connected Accounts</CardTitle>
-                        <CardDescription>
+                <div class="card-elevated relative overflow-hidden mb-12 animate-slide-up">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-blue-500"></div>
+                    <div class="mb-6">
+                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                            Connected Accounts
+                        </h2>
+                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
                             You have {{ accounts?.length || 0 }} social media
                             account(s) connected
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="flex flex-wrap gap-2">
-                            <Badge
-                                v-for="account in accounts"
-                                :key="account.id"
-                                variant="secondary"
-                                class="flex items-center gap-1"
-                            >
-                                <component
-                                    :is="
-                                        platforms.find(
-                                            (p) =>
-                                                p.provider === account.provider,
-                                        )?.icon
-                                    "
-                                    class="h-3 w-3"
-                                />
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <div
+                            v-for="account in accounts"
+                            :key="account.id"
+                            class="inline-flex items-center gap-2 rounded-2xl border border-neutral-200/60 bg-white/50 px-4 py-2 shadow-sm backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
+                        >
+                            <component
+                                :is="
+                                    platforms.find(
+                                        (p) =>
+                                            p.provider === account.provider,
+                                    )?.icon
+                                "
+                                class="h-5 w-5"
+                            />
+                            <span class="text-body font-medium text-neutral-900 dark:text-white">
                                 {{ account.display_name }}
-                            </Badge>
+                            </span>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 <!-- Platform Cards -->
-                <div class="grid gap-6 md:grid-cols-2">
-                    <Card
+                <div class="grid gap-8 lg:grid-cols-2">
+                    <div
                         v-for="platform in platforms"
                         :key="platform.provider"
-                        class="relative overflow-hidden"
+                        class="card-elevated relative overflow-hidden group hover:scale-[1.02] transition-all duration-300"
                     >
-                        <CardHeader>
+                        <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                             :class="platform.color"></div>
+                        <div class="mb-6">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-4">
                                     <div
                                         :class="[
                                             platform.color,
-                                            'flex h-10 w-10 items-center justify-center rounded-lg',
+                                            'flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300',
                                         ]"
                                     >
                                         <component
                                             :is="platform.icon"
-                                            class="h-5 w-5 text-white"
+                                            class="h-7 w-7 text-white"
                                         />
                                     </div>
                                     <div>
-                                        <CardTitle class="text-lg">{{
+                                        <h3 class="text-headline-2 text-neutral-900 dark:text-white">{{
                                             platform.name
-                                        }}</CardTitle>
-                                        <CardDescription>{{
+                                        }}</h3>
+                                        <p class="text-body-large text-neutral-600 dark:text-neutral-400 mt-1">{{
                                             platform.description
-                                        }}</CardDescription>
+                                        }}</p>
                                     </div>
                                 </div>
 
                                 <!-- Connection Status -->
-                                <div class="flex items-center gap-2">
-                                    <Badge
+                                <div class="flex items-center gap-3">
+                                    <div
                                         v-if="
                                             isPlatformConnected(
                                                 platform.provider,
                                             )
                                         "
-                                        variant="default"
-                                        class="bg-green-100 text-green-800"
+                                        class="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/80 px-4 py-2 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
                                     >
-                                        <CheckCircleIcon class="mr-1 h-3 w-3" />
-                                        Connected
-                                    </Badge>
-                                    <Badge
+                                        <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span class="text-body font-medium text-emerald-700 dark:text-emerald-300">Connected</span>
+                                    </div>
+                                    <div
                                         v-else
-                                        variant="outline"
-                                        class="text-gray-500"
+                                        class="inline-flex items-center gap-2 rounded-full border border-neutral-200/60 bg-neutral-50/80 px-4 py-2 backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
                                     >
-                                        Not Connected
-                                    </Badge>
+                                        <div class="h-2 w-2 rounded-full bg-neutral-400"></div>
+                                        <span class="text-body font-medium text-neutral-600 dark:text-neutral-400">Not Connected</span>
+                                    </div>
                                 </div>
                             </div>
-                        </CardHeader>
+                        </div>
 
-                        <CardContent>
+                        <div class="space-y-6">
                             <!-- Connected Account Info -->
                             <div
                                 v-if="isPlatformConnected(platform.provider)"
-                                class="space-y-4"
+                                class="space-y-6"
                             >
-                                <div class="rounded-lg bg-gray-50 p-4">
+                                <div class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-6 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80">
                                     <div
                                         class="flex items-center justify-between"
                                     >
-                                        <div>
+                                        <div class="flex-1">
                                             <p
-                                                class="font-medium text-gray-900"
+                                                class="text-headline-3 font-semibold text-neutral-900 dark:text-white"
                                             >
                                                 {{
                                                     getConnectedAccount(
@@ -293,23 +305,26 @@ onMounted(() => {
                                                     )?.display_name
                                                 }}
                                             </p>
-                                            <p class="text-sm text-gray-500">
+                                            <p class="text-body-large text-neutral-600 dark:text-neutral-400 mt-1">
                                                 @{{
                                                     getConnectedAccount(
                                                         platform.provider,
                                                     )?.username
                                                 }}
                                             </p>
-                                            <p class="text-xs text-gray-400">
-                                                Connected
-                                                {{
-                                                    formatDate(
-                                                        getConnectedAccount(
-                                                            platform.provider,
-                                                        )?.connected_at,
-                                                    )
-                                                }}
-                                            </p>
+                                            <div class="flex items-center gap-2 mt-3">
+                                                <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
+                                                <p class="text-body-small text-neutral-500 dark:text-neutral-500">
+                                                    Connected
+                                                    {{
+                                                        formatDate(
+                                                            getConnectedAccount(
+                                                                platform.provider,
+                                                            )?.connected_at,
+                                                        )
+                                                    }}
+                                                </p>
+                                            </div>
                                         </div>
                                         <img
                                             v-if="
@@ -327,29 +342,28 @@ onMounted(() => {
                                                     platform.provider,
                                                 ).display_name
                                             "
-                                            class="h-10 w-10 rounded-full"
+                                            class="h-14 w-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-neutral-800"
                                         />
                                     </div>
                                 </div>
 
                                 <!-- Platform-specific actions -->
-                                <div class="flex gap-2">
+                                <div class="flex gap-3">
                                     <Button
                                         v-if="platform.provider === 'facebook'"
                                         variant="outline"
-                                        size="sm"
                                         @click="
                                             refreshAccount(platform.provider)
                                         "
                                         :disabled="loading"
+                                        class="hover-glow"
                                     >
-                                        <RefreshCwIcon class="mr-2 h-4 w-4" />
+                                        <RefreshCwIcon class="mr-2 h-5 w-5" />
                                         Refresh Pages
                                     </Button>
 
                                     <Button
                                         variant="outline"
-                                        size="sm"
                                         @click="
                                             confirmDisconnect(
                                                 getConnectedAccount(
@@ -358,6 +372,7 @@ onMounted(() => {
                                             )
                                         "
                                         :disabled="disconnecting"
+                                        class="hover:border-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                     >
                                         Disconnect
                                     </Button>
@@ -365,19 +380,19 @@ onMounted(() => {
                             </div>
 
                             <!-- Not Connected State -->
-                            <div v-else class="space-y-4">
+                            <div v-else class="space-y-6">
                                 <div>
-                                    <h4 class="mb-2 font-medium text-gray-900">
+                                    <h4 class="text-headline-4 mb-4 font-semibold text-neutral-900 dark:text-white">
                                         Features:
                                     </h4>
-                                    <ul class="space-y-1 text-sm text-gray-600">
+                                    <ul class="space-y-3">
                                         <li
                                             v-for="feature in platform.features"
                                             :key="feature"
-                                            class="flex items-center gap-2"
+                                            class="flex items-center gap-3 text-body-large text-neutral-600 dark:text-neutral-400"
                                         >
                                             <div
-                                                class="h-1.5 w-1.5 rounded-full bg-gray-400"
+                                                class="h-2 w-2 rounded-full bg-brand-primary"
                                             ></div>
                                             {{ feature }}
                                         </li>
@@ -385,16 +400,16 @@ onMounted(() => {
                                 </div>
 
                                 <Button
-                                    class="w-full"
+                                    class="btn-primary w-full py-4 text-base font-semibold hover-glow"
                                     @click="connectAccount(platform.provider)"
                                     :disabled="loading"
                                 >
-                                    <PlusIcon class="mr-2 h-4 w-4" />
+                                    <PlusIcon class="mr-3 h-5 w-5" />
                                     Connect {{ platform.name }}
                                 </Button>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Help Section -->
@@ -440,6 +455,7 @@ onMounted(() => {
                     </CardContent>
                 </Card>
             </div>
+        </div>
         </div>
 
         <!-- Disconnect Confirmation Dialog -->

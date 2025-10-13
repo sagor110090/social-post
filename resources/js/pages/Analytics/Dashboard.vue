@@ -212,90 +212,94 @@ const setQuickDate = (period: string) => {
     <Head title="Analytics Dashboard" />
 
     <AppLayout layout="sidebar">
-        <div class="flex h-full flex-1 flex-col space-y-8 p-6">
-            <!-- Enhanced Header -->
-            <div
-                class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
-            >
-                <div>
-                    <h1
-                        class="text-display-2 mb-2 text-neutral-900 dark:text-white"
+        <div class="min-h-screen gradient-mesh">
+            <div class="p-6">
+                <div class="flex h-full flex-1 flex-col space-y-8">
+                    <!-- Enhanced Header -->
+                    <div
+                        class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between animate-fade-in"
                     >
-                        Analytics
-                        <span class="text-gradient">Dashboard</span> 📊
-                    </h1>
-                    <p
-                        class="text-body-large text-neutral-600 dark:text-neutral-400"
-                    >
-                        Track your social media performance and engagement
-                        across all platforms
-                    </p>
+                        <div>
+                            <h1
+                                class="text-display-1 mb-4 text-neutral-900 dark:text-white"
+                            >
+                                Analytics
+                                <span class="text-gradient font-bold">Dashboard</span> 📊
+                            </h1>
+                            <p
+                                class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                            >
+                                Track your social media performance and engagement
+                                across all platforms
+                            </p>
+                        </div>
+                        <div class="flex gap-4">
+                            <Button
+                                @click="showFilters = !showFilters"
+                                variant="outline"
+                                class="btn-secondary hover-glow"
+                            >
+                                <Filter class="mr-3 h-5 w-5" />
+                                {{ showFilters ? 'Hide' : 'Show' }} Filters
+                            </Button>
+                            <Button
+                                @click="exportData"
+                                variant="outline"
+                                class="btn-secondary hover-glow"
+                            >
+                                <Download class="mr-3 h-5 w-5" />
+                                Export Data
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex gap-3">
-                    <Button
-                        @click="showFilters = !showFilters"
-                        variant="outline"
-                        class="btn-secondary"
-                    >
-                        <Filter class="mr-2 h-4 w-4" />
-                        {{ showFilters ? 'Hide' : 'Show' }} Filters
-                    </Button>
-                    <Button
-                        @click="exportData"
-                        variant="outline"
-                        class="btn-secondary"
-                    >
-                        <Download class="mr-2 h-4 w-4" />
-                        Export Data
-                    </Button>
-                </div>
-            </div>
 
             <!-- Enhanced Date Filters -->
             <div
                 v-if="showFilters"
-                class="rounded-xl border bg-card text-card-foreground shadow-sm"
+                class="card-elevated relative overflow-hidden animate-slide-up"
             >
-                <div class="mb-6">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                <div class="mb-8">
                     <h2
-                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
+                        class="text-headline-1 mb-4 text-neutral-900 dark:text-white"
                     >
                         Date Range
                     </h2>
-                    <p class="text-body text-neutral-600 dark:text-neutral-400">
+                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
                         Select the time period for your analytics data
                     </p>
                 </div>
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div>
                         <label
-                            class="text-body mb-2 block font-medium text-neutral-700 dark:text-neutral-300"
+                            class="text-body-large mb-3 block font-semibold text-neutral-700 dark:text-neutral-300"
                             >Start Date</label
                         >
                         <input
                             v-model="dateRange.start"
                             type="date"
-                            class="input-field w-full"
+                            class="input-field h-12 text-base w-full"
                         />
                     </div>
                     <div>
                         <label
-                            class="text-body mb-2 block font-medium text-neutral-700 dark:text-neutral-300"
+                            class="text-body-large mb-3 block font-semibold text-neutral-700 dark:text-neutral-300"
                             >End Date</label
                         >
                         <input
                             v-model="dateRange.end"
                             type="date"
-                            class="input-field w-full"
+                            class="input-field h-12 text-base w-full"
                         />
                     </div>
                     <div class="flex items-end">
                         <Button
                             @click="applyFilters"
                             :disabled="loading"
-                            class="btn-primary w-full"
+                            class="btn-primary w-full py-4 text-base font-semibold hover-glow"
                         >
-                            <Calendar class="mr-2 h-4 w-4" />
+                            <Calendar class="mr-3 h-5 w-5" />
                             Apply Filters
                         </Button>
                     </div>
@@ -512,7 +516,7 @@ const setQuickDate = (period: string) => {
             </div>
 
             <!-- Best Performing Post -->
-            <Card v-if="analytics.best_performing_post">
+            <div v-if="analytics.best_performing_post">
                 <CardHeader>
                     <CardTitle>Best Performing Post</CardTitle>
                     <CardDescription>
@@ -558,7 +562,7 @@ const setQuickDate = (period: string) => {
                         </Button>
                     </div>
                 </CardContent>
-            </Card>
+            </div>
 
             <!-- Charts -->
             <div class="grid gap-6 lg:grid-cols-2">
@@ -633,5 +637,6 @@ const setQuickDate = (period: string) => {
                 </Card>
             </div>
         </div>
+    </div>
     </AppLayout>
 </template>

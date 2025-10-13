@@ -164,7 +164,7 @@ defineProps<{
 
                 <!-- Auth Card -->
                 <div
-                    class="rounded-xl border bg-card text-card-foreground shadow-sm"
+                    class="rounded-xl border bg-card text-card-foreground shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 px-8 py-12"
                 >
                     <div class="mb-8 text-center">
                         <h2

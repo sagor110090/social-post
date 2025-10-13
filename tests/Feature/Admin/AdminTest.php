@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use App\Models\Post;
-use App\Models\Subscription;
 use App\Models\SocialAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -43,7 +42,6 @@ test('admin can view specific user', function () {
     Sanctum::actingAs($admin);
 
     $user = User::factory()->create();
-    $subscription = Subscription::factory()->create(['user_id' => $user->id]);
     SocialAccount::factory()->create(['user_id' => $user->id]);
     Post::factory()->create(['user_id' => $user->id]);
 
@@ -130,45 +128,7 @@ test('admin can delete post', function () {
     ]);
 });
 
-test('admin can view subscriptions list', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
-    Sanctum::actingAs($admin);
 
-    Subscription::factory()->count(5)->create();
-
-    $response = $this->get('/admin/subscriptions');
-
-    $response->assertStatus(200);
-});
-
-test('admin can update subscription', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
-    Sanctum::actingAs($admin);
-
-    $subscription = Subscription::factory()->create(['stripe_status' => 'active']);
-
-    $response = $this->patch("/admin/subscriptions/{$subscription->id}", [
-        'stripe_status' => 'canceled',
-    ]);
-
-    $response->assertRedirect();
-    $this->assertDatabaseHas('subscriptions', [
-        'id' => $subscription->id,
-        'stripe_status' => 'canceled',
-    ]);
-});
-
-test('admin can cancel subscription', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
-    Sanctum::actingAs($admin);
-
-    $subscription = Subscription::factory()->create(['stripe_status' => 'active']);
-
-    $response = $this->delete("/admin/subscriptions/{$subscription->id}");
-
-    $response->assertRedirect();
-    // Note: In real implementation, this would call Stripe API
-});
 
 test('admin can impersonate user', function () {
     $admin = User::factory()->create(['is_admin' => true]);

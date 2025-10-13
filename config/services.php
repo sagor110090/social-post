@@ -39,30 +39,7 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
-    'stripe' => [
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
-        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        'plans' => [
-            'free' => [
-                'name' => 'Free',
-                'price' => 0,
-                'features' => ['3 posts per month', '1 social account'],
-            ],
-            'pro' => [
-                'name' => 'Pro',
-                'price' => 29,
-                'stripe_price_id' => env('STRIPE_PRO_PRICE_ID'),
-                'features' => ['Unlimited posts', '5 social accounts', 'AI generator', 'Analytics'],
-            ],
-            'agency' => [
-                'name' => 'Agency',
-                'price' => 99,
-                'stripe_price_id' => env('STRIPE_AGENCY_PRICE_ID'),
-                'features' => ['Everything in Pro', 'Unlimited accounts', 'Team collaboration', 'White label'],
-            ],
-        ],
-    ],
+    
 
     // Social Media OAuth Configuration
     'facebook' => [

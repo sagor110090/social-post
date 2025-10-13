@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, Billable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin',
+        
     ];
 
     /**
@@ -61,10 +60,7 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
-    public function subscription(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(Subscription::class)->latest();
-    }
+
 
     public function ownedTeams(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
@@ -83,31 +79,5 @@ class User extends Authenticatable
         return $this->hasMany(Media::class);
     }
 
-    public function hasActiveSubscription(): bool
-    {
-        return $this->subscription && $this->subscription->isActive();
-    }
 
-    public function canCreateMoreSocialAccounts(): bool
-    {
-        $maxAccounts = $this->subscription?->getMaxSocialAccounts() ?? 1;
-        $currentAccounts = $this->socialAccounts()->where('is_active', true)->count();
-        
-        return $currentAccounts < $maxAccounts;
-    }
-
-    public function canAccessAI(): bool
-    {
-        return $this->subscription?->canAccessAI() ?? false;
-    }
-
-    public function canAccessAnalytics(): bool
-    {
-        return $this->subscription?->canAccessAnalytics() ?? false;
-    }
-
-    public function canCreateTeams(): bool
-    {
-        return $this->subscription?->canCreateTeams() ?? false;
-    }
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\SocialAccount;
 use App\Models\PostAnalytics;
-use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,10 +15,7 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        
-        // Get user's subscription
-        $subscription = $user->subscription;
-        
+
         // Get basic stats
         $stats = [
             'total_posts' => $user->posts()->count(),
@@ -99,25 +95,8 @@ class DashboardController extends Controller
         // Get analytics summary (last 30 days)
         $analyticsSummary = $this->getAnalyticsSummary($user);
 
-        // Get subscription info
-        $subscriptionInfo = null;
-        if ($subscription) {
-            $subscriptionInfo = [
-                'type' => $subscription->type,
-                'status' => $subscription->status,
-                'is_active' => $subscription->isActive(),
-                'is_on_trial' => $subscription->isOnTrial(),
-                'trial_ends_at' => $subscription->trial_ends_at?->toISOString(),
-                'ends_at' => $subscription->ends_at?->toISOString(),
-                'max_social_accounts' => $subscription->getMaxSocialAccounts(),
-                'can_access_ai' => $subscription->canAccessAI(),
-                'can_access_analytics' => $subscription->canAccessAnalytics(),
-                'can_create_teams' => $subscription->canCreateTeams(),
-            ];
-        }
-
         // Quick actions based on user's state
-        $quickActions = $this->getQuickActions($user, $subscription);
+        $quickActions = $this->getQuickActions($user);
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
@@ -125,7 +104,7 @@ class DashboardController extends Controller
             'connected_accounts' => $connectedAccounts,
             'upcoming_posts' => $upcomingPosts,
             'analytics_summary' => $analyticsSummary,
-            'subscription' => $subscriptionInfo,
+
             'quick_actions' => $quickActions,
         ]);
     }
@@ -133,7 +112,7 @@ class DashboardController extends Controller
     private function getAnalyticsSummary($user): array
     {
         $thirtyDaysAgo = now()->subDays(30);
-        
+
         $analytics = $user->posts()
             ->whereHas('analytics', function ($query) use ($thirtyDaysAgo) {
                 $query->where('recorded_at', '>=', $thirtyDaysAgo);
@@ -161,7 +140,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function getQuickActions($user, $subscription): array
+    private function getQuickActions($user): array
     {
         $actions = [];
 
@@ -175,7 +154,7 @@ class DashboardController extends Controller
         ];
 
         // Check if user can connect more accounts
-        if ($user->canCreateMoreSocialAccounts()) {
+        if (true) { // Allow all users to connect accounts
             $actions[] = [
                 'title' => 'Connect Account',
                 'description' => 'Add a new social media account',
@@ -185,8 +164,8 @@ class DashboardController extends Controller
             ];
         }
 
-        // AI Generator (requires subscription)
-        if ($user->canAccessAI()) {
+        // AI Generator (available to all users)
+        if (true) {
             $actions[] = [
                 'title' => 'AI Generator',
                 'description' => 'Generate content with AI',
@@ -205,31 +184,18 @@ class DashboardController extends Controller
             'color' => 'orange',
         ];
 
-        // Analytics (requires subscription)
-        if ($user->canAccessAnalytics()) {
+        // Analytics (available to all users)
+        if (true) {
             $actions[] = [
                 'title' => 'Analytics',
                 'description' => 'View performance metrics',
-                'href' => route('analytics.index'),
+                'href' => route('analytics.dashboard'),
                 'icon' => 'BarChart3',
                 'color' => 'indigo',
             ];
         }
 
-        // Upgrade prompt for free users
-        // TODO: Implement billing routes and uncomment this section
-        /*
-        if (!$subscription || !$subscription->isActive()) {
-            $actions[] = [
-                'title' => 'Upgrade Plan',
-                'description' => 'Unlock premium features',
-                'href' => route('billing.plans'),
-                'icon' => 'Crown',
-                'color' => 'yellow',
-                'featured' => true,
-            ];
-        }
-        */
+
 
         return $actions;
     }

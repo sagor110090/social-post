@@ -178,9 +178,11 @@ const rightNavItems: NavItem[] = [
 <template>
     <div>
         <div
-            class="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/80 backdrop-blur-sm dark:border-neutral-700/80 dark:bg-neutral-900/80"
+            class="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-xl"
         >
-            <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+            <div
+                class="relative mx-auto flex h-16 items-center px-4 md:max-w-7xl"
+            >
                 <!-- Mobile Menu -->
                 <div class="lg:hidden">
                     <Sheet>
@@ -283,9 +285,14 @@ const rightNavItems: NavItem[] = [
 
                 <Link
                     :href="dashboard()"
-                    class="flex items-center gap-x-3 transition-opacity hover:opacity-80"
+                    class="group flex items-center gap-x-3 transition-all duration-300 hover:scale-105"
                 >
-                    <AppLogo />
+                    <div class="relative">
+                        <AppLogo />
+                        <div
+                            class="from-brand-primary to-brand-accent absolute -inset-1 rounded-lg bg-gradient-to-r opacity-0 blur transition-opacity duration-300 group-hover:opacity-20"
+                        ></div>
+                    </div>
                 </Link>
 
                 <!-- Desktop Menu -->
@@ -300,7 +307,7 @@ const rightNavItems: NavItem[] = [
                                 <button
                                     type="button"
                                     :class="[
-                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50',
+                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium outline-none transition-[color,box-shadow] hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50',
                                         activeItemStyles(item.href),
                                         openDropdown === item.title
                                             ? 'bg-accent/50 text-accent-foreground'
@@ -325,7 +332,7 @@ const rightNavItems: NavItem[] = [
                                 </button>
                                 <div
                                     v-if="openDropdown === item.title"
-                                    class="absolute top-full left-0 z-50 mt-1.5 w-64 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg"
+                                    class="absolute left-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg"
                                     @click.stop
                                 >
                                     <div class="p-2">
@@ -356,7 +363,7 @@ const rightNavItems: NavItem[] = [
                             <template v-else>
                                 <Link
                                     :class="[
-                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50',
+                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium outline-none transition-[color,box-shadow] hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50',
                                         activeItemStyles(item.href),
                                     ]"
                                     :href="item.href"
@@ -455,7 +462,7 @@ const rightNavItems: NavItem[] = [
 
         <div
             v-if="props.breadcrumbs.length > 1"
-            class="flex w-full border-b border-sidebar-border/70"
+            class="border-sidebar-border/70 flex w-full border-b"
         >
             <div
                 class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"

@@ -20,8 +20,8 @@ defineProps<{
 
 <template>
     <AuthBase
-        title="Log in to your account"
-        description="Enter your email and password below to log in"
+        title="Welcome Back"
+        description="Sign in to your AutoPost AI account"
     >
         <Head title="Log in" />
 
@@ -39,11 +39,11 @@ defineProps<{
             class="space-y-6"
         >
             <!-- Email Field -->
-            <div class="space-y-2">
+            <div class="space-y-3">
                 <Label
                     for="email"
-                    class="text-body font-medium text-neutral-700 dark:text-neutral-300"
-                    >Email address</Label
+                    class="text-body-large font-semibold text-neutral-700 dark:text-neutral-300"
+                    >Email Address</Label
                 >
                 <Input
                     id="email"
@@ -53,25 +53,25 @@ defineProps<{
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
-                    placeholder="Enter your email"
-                    class="input-field"
+                    placeholder="Enter your email address"
+                    class="input-field h-12 text-base"
                     :class="{ error: errors.email }"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <!-- Password Field -->
-            <div class="space-y-2">
+            <div class="space-y-3">
                 <div class="flex items-center justify-between">
                     <Label
                         for="password"
-                        class="text-body font-medium text-neutral-700 dark:text-neutral-300"
+                        class="text-body-large font-semibold text-neutral-700 dark:text-neutral-300"
                         >Password</Label
                     >
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
-                        class="text-body text-brand-primary hover:text-brand-primary-dark transition-colors"
+                        class="text-body text-brand-primary hover:text-brand-primary-dark font-medium transition-colors"
                         :tabindex="5"
                     >
                         Forgot password?
@@ -85,7 +85,7 @@ defineProps<{
                     :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Enter your password"
-                    class="input-field"
+                    class="input-field h-12 text-base"
                     :class="{ error: errors.password }"
                 />
                 <InputError :message="errors.password" />

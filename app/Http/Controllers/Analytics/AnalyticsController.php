@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Analytics;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\CheckSubscription;
 use App\Models\Post;
 use App\Models\SocialAccount;
 use App\Services\Analytics\AnalyticsService;
@@ -16,7 +15,6 @@ class AnalyticsController extends Controller
 {
     public function __construct(private AnalyticsService $analyticsService)
     {
-        $this->middleware(CheckSubscription::class . ':analytics');
     }
 
     public function index(Request $request)
@@ -132,11 +130,7 @@ class AnalyticsController extends Controller
         $startDate = $request->get('start_date') ? Carbon::parse($request->get('start_date')) : now()->subDays(30);
         $endDate = $request->get('end_date') ? Carbon::parse($request->get('end_date')) : now();
 
-        if (!$user->canCreateTeams()) {
-            return response()->json([
-                'error' => 'Team analytics require an Enterprise subscription',
-            ], 403);
-        }
+        
 
         $analytics = $this->analyticsService->getTeamAnalytics($user, $startDate, $endDate);
 

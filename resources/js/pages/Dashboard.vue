@@ -12,7 +12,6 @@ import {
     CalendarDays,
     CheckCircle,
     Clock,
-    Crown,
     Edit,
     Eye,
     FileText,
@@ -30,7 +29,6 @@ const props = defineProps({
     connected_accounts: Array,
     upcoming_posts: Array,
     analytics_summary: Object,
-    subscription: Object,
     quick_actions: Array,
 });
 
@@ -110,686 +108,755 @@ const formatNumber = (num) => {
 
 <template>
     <AppLayout title="Dashboard">
-        <div class="space-y-8">
-            <!-- Welcome Section -->
-            <div
-                class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
-            >
-                <div class="space-y-2">
-                    <h1 class="text-display-2 text-neutral-900 dark:text-white">
-                        Welcome back,
-                        <span class="text-gradient">{{
-                            auth.user?.name || 'User'
-                        }}</span
-                        >! 👋
-                    </h1>
-                    <p
-                        class="text-body-large max-w-2xl text-neutral-600 dark:text-neutral-400"
-                    >
-                        Here's your social media performance overview and what's
-                        happening across your connected platforms today.
-                    </p>
-                </div>
-
-                <!-- Subscription Status & Quick Actions -->
+        <div class="min-h-screen">
+            <div class="space-y-8 p-6">
+                <!-- Welcome Section -->
                 <div
-                    class="flex flex-col items-start gap-4 sm:flex-row sm:items-center"
+                    class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
                 >
+                    <div class="space-y-4">
+                        <h1
+                            class="text-display-2 animate-fade-in text-foreground"
+                        >
+                            Welcome back,
+                            <span class="text-gradient font-bold">{{
+                                auth.user?.name || 'User'
+                            }}</span
+                            >! ✨
+                        </h1>
+                        <p
+                            class="text-body-large animate-slide-up max-w-2xl text-muted-foreground"
+                        >
+                            Here's your social media performance overview and
+                            what's happening across your connected platforms
+                            today.
+                        </p>
+                    </div>
+
+                    <!-- Quick Actions -->
                     <div
-                        v-if="subscription"
-                        class="from-brand-primary/10 to-brand-accent/10 border-brand-primary/20 flex items-center gap-3 rounded-xl border bg-gradient-to-r px-4 py-2"
+                        class="animate-slide-up flex flex-col items-start gap-4 sm:flex-row sm:items-center"
                     >
-                        <div
-                            class="bg-brand-primary flex h-8 w-8 items-center justify-center rounded-lg"
-                        >
-                            <Crown class="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                            <p class="text-brand-primary text-sm font-semibold">
-                                {{
-                                    subscription.type.charAt(0).toUpperCase() +
-                                    subscription.type.slice(1)
-                                }}
-                                Plan
-                            </p>
-                            <p
-                                class="text-xs text-neutral-600 dark:text-neutral-400"
-                            >
-                                {{
-                                    subscription.is_active
-                                        ? 'Active'
-                                        : 'Inactive'
-                                }}
-                            </p>
-                        </div>
-                    </div>
-                    <Button class="btn-primary">
-                        <PlusCircle class="mr-2 h-4 w-4" />
-                        Quick Post
-                    </Button>
-                </div>
-            </div>
-
-            <!-- Enhanced Stats Grid -->
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <!-- Total Posts Card -->
-                <div class="card-elevated hover-lift group">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 transition-transform group-hover:scale-110 dark:bg-blue-900/30"
-                        >
-                            <FileText
-                                class="h-6 w-6 text-blue-600 dark:text-blue-400"
-                            />
-                        </div>
-                        <div
-                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
-                        >
-                            <TrendingUp class="h-4 w-4" />
-                            <span class="text-xs font-medium">+12%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3
-                            class="text-2xl font-bold text-neutral-900 dark:text-white"
-                        >
-                            {{ stats.total_posts || 0 }}
-                        </h3>
-                        <p
-                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
-                        >
-                            Total Posts
-                        </p>
-                        <p
-                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
-                        >
-                            {{ stats.published_posts || 0 }} published
-                        </p>
+                        <Button class="btn-primary hover-glow">
+                            <PlusCircle class="mr-2 h-4 w-4" />
+                            Quick Post
+                        </Button>
                     </div>
                 </div>
 
-                <!-- Connected Accounts Card -->
-                <div class="card-elevated hover-lift group">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 transition-transform group-hover:scale-110 dark:bg-purple-900/30"
-                        >
-                            <Users
-                                class="h-6 w-6 text-purple-600 dark:text-purple-400"
-                            />
-                        </div>
-                        <div
-                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
-                        >
-                            <TrendingUp class="h-4 w-4" />
-                            <span class="text-xs font-medium">+2</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3
-                            class="text-2xl font-bold text-neutral-900 dark:text-white"
-                        >
-                            {{ stats.connected_accounts || 0 }}
-                        </h3>
-                        <p
-                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
-                        >
-                            Connected Accounts
-                        </p>
-                        <p
-                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
-                        >
-                            All platforms active
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Total Engagement Card -->
-                <div class="card-elevated hover-lift group">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 transition-transform group-hover:scale-110 dark:bg-green-900/30"
-                        >
-                            <Heart
-                                class="h-6 w-6 text-green-600 dark:text-green-400"
-                            />
-                        </div>
-                        <div
-                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
-                        >
-                            <TrendingUp class="h-4 w-4" />
-                            <span class="text-xs font-medium">+24%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3
-                            class="text-2xl font-bold text-neutral-900 dark:text-white"
-                        >
-                            {{ formatNumber(stats.total_engagement || 0) }}
-                        </h3>
-                        <p
-                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
-                        >
-                            Total Engagement
-                        </p>
-                        <p
-                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
-                        >
-                            {{ engagementRate }}% engagement rate
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Scheduled Posts Card -->
-                <div class="card-elevated hover-lift group">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 transition-transform group-hover:scale-110 dark:bg-orange-900/30"
-                        >
-                            <Calendar
-                                class="h-6 w-6 text-orange-600 dark:text-orange-400"
-                            />
-                        </div>
-                        <div
-                            class="flex items-center gap-1 text-blue-600 dark:text-blue-400"
-                        >
-                            <Clock class="h-4 w-4" />
-                            <span class="text-xs font-medium">3 today</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3
-                            class="text-2xl font-bold text-neutral-900 dark:text-white"
-                        >
-                            {{ stats.scheduled_posts || 0 }}
-                        </h3>
-                        <p
-                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
-                        >
-                            Scheduled Posts
-                        </p>
-                        <p
-                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
-                        >
-                            Ready to publish
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Enhanced Quick Actions -->
-            <div class="card-elevated">
-                <div class="mb-6">
-                    <h2
-                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
-                    >
-                        Quick Actions
-                    </h2>
-                    <p class="text-body text-neutral-600 dark:text-neutral-400">
-                        Get started with these common tasks
-                    </p>
-                </div>
+                <!-- Enhanced Stats Grid -->
                 <div
-                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                    class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
                 >
-                    <!-- Create Post -->
-                    <Link href="/social/posts/create" class="group">
+                    <!-- Total Posts Card -->
+                    <div
+                        class="card-elevated hover-lift group relative overflow-hidden"
+                    >
                         <div
-                            class="hover:border-brand-primary cursor-pointer rounded-xl border border-neutral-200 p-6 transition-all duration-200 hover:shadow-lg dark:border-neutral-700"
-                        >
-                            <div
-                                class="flex flex-col items-center space-y-3 text-center"
-                            >
+                            class="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-gradient-to-br from-blue-400/20 to-transparent"
+                        ></div>
+                        <div class="relative z-10">
+                            <div class="mb-4 flex items-center justify-between">
                                 <div
-                                    class="from-brand-primary to-brand-accent flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white transition-transform group-hover:scale-110"
+                                    class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
                                 >
-                                    <Edit class="h-6 w-6" />
+                                    <FileText class="h-7 w-7 text-white" />
                                 </div>
-                                <div>
-                                    <h3
-                                        class="font-semibold text-neutral-900 dark:text-white"
+                                <div
+                                    class="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                >
+                                    <TrendingUp class="h-3 w-3" />
+                                    <span class="text-xs font-semibold"
+                                        >+12%</span
                                     >
-                                        Create Post
-                                    </h3>
-                                    <p
-                                        class="mt-1 text-xs text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        Compose new content
-                                    </p>
                                 </div>
                             </div>
+                            <div>
+                                <h3 class="text-3xl font-bold text-foreground">
+                                    {{ stats.total_posts || 0 }}
+                                </h3>
+                                <p
+                                    class="mt-1 text-sm font-medium text-muted-foreground"
+                                >
+                                    Total Posts
+                                </p>
+                                <p
+                                    class="mt-1 text-xs text-muted-foreground/70"
+                                >
+                                    {{ stats.published_posts || 0 }} published
+                                </p>
+                            </div>
                         </div>
-                    </Link>
+                    </div>
 
-                    <!-- AI Generator -->
-                    <Link href="/ai/generator" class="group">
+                    <!-- Connected Accounts Card -->
+                    <div
+                        class="card-elevated hover-lift group relative overflow-hidden"
+                    >
                         <div
-                            class="hover:border-brand-primary relative cursor-pointer rounded-xl border border-neutral-200 p-6 transition-all duration-200 hover:shadow-lg dark:border-neutral-700"
-                        >
-                            <div class="absolute -top-2 -right-2">
+                            class="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-gradient-to-br from-purple-400/20 to-transparent"
+                        ></div>
+                        <div class="relative z-10">
+                            <div class="mb-4 flex items-center justify-between">
                                 <div
-                                    class="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                                    class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
                                 >
-                                    <Crown class="h-3 w-3 text-white" />
+                                    <Users class="h-7 w-7 text-white" />
+                                </div>
+                                <div
+                                    class="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                >
+                                    <TrendingUp class="h-3 w-3" />
+                                    <span class="text-xs font-semibold"
+                                        >+2</span
+                                    >
                                 </div>
                             </div>
-                            <div
-                                class="flex flex-col items-center space-y-3 text-center"
-                            >
-                                <div
-                                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white transition-transform group-hover:scale-110"
+                            <div>
+                                <h3
+                                    class="text-3xl font-bold text-neutral-900 dark:text-white"
                                 >
-                                    <BrainCircuit class="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h3
-                                        class="font-semibold text-neutral-900 dark:text-white"
-                                    >
-                                        AI Generator
-                                    </h3>
-                                    <p
-                                        class="mt-1 text-xs text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        Powered content
-                                    </p>
-                                </div>
+                                    {{ stats.connected_accounts || 0 }}
+                                </h3>
+                                <p
+                                    class="mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Connected Accounts
+                                </p>
+                                <p
+                                    class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                                >
+                                    All platforms active
+                                </p>
                             </div>
                         </div>
-                    </Link>
+                    </div>
 
-                    <!-- Schedule Post -->
-                    <Link href="/calendar" class="group">
+                    <!-- Total Engagement Card -->
+                    <div
+                        class="card-elevated hover-lift group relative overflow-hidden"
+                    >
                         <div
-                            class="hover:border-brand-primary cursor-pointer rounded-xl border border-neutral-200 p-6 transition-all duration-200 hover:shadow-lg dark:border-neutral-700"
-                        >
-                            <div
-                                class="flex flex-col items-center space-y-3 text-center"
-                            >
+                            class="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-gradient-to-br from-emerald-400/20 to-transparent"
+                        ></div>
+                        <div class="relative z-10">
+                            <div class="mb-4 flex items-center justify-between">
                                 <div
-                                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-teal-500 text-white transition-transform group-hover:scale-110"
+                                    class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
                                 >
-                                    <CalendarDays class="h-6 w-6" />
+                                    <Heart class="h-7 w-7 text-white" />
                                 </div>
-                                <div>
-                                    <h3
-                                        class="font-semibold text-neutral-900 dark:text-white"
+                                <div
+                                    class="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                >
+                                    <TrendingUp class="h-3 w-3" />
+                                    <span class="text-xs font-semibold"
+                                        >+24%</span
                                     >
-                                        Schedule
-                                    </h3>
-                                    <p
-                                        class="mt-1 text-xs text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        Plan ahead
-                                    </p>
                                 </div>
                             </div>
+                            <div>
+                                <h3
+                                    class="text-3xl font-bold text-neutral-900 dark:text-white"
+                                >
+                                    {{
+                                        formatNumber(
+                                            stats.total_engagement || 0,
+                                        )
+                                    }}
+                                </h3>
+                                <p
+                                    class="mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Total Engagement
+                                </p>
+                                <p
+                                    class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                                >
+                                    {{ engagementRate }}% engagement rate
+                                </p>
+                            </div>
                         </div>
-                    </Link>
+                    </div>
 
-                    <!-- Analytics -->
-                    <Link href="/analytics/dashboard" class="group">
+                    <!-- Scheduled Posts Card -->
+                    <div
+                        class="card-elevated hover-lift group relative overflow-hidden"
+                    >
                         <div
-                            class="hover:border-brand-primary cursor-pointer rounded-xl border border-neutral-200 p-6 transition-all duration-200 hover:shadow-lg dark:border-neutral-700"
-                        >
-                            <div
-                                class="flex flex-col items-center space-y-3 text-center"
-                            >
+                            class="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-gradient-to-br from-amber-400/20 to-transparent"
+                        ></div>
+                        <div class="relative z-10">
+                            <div class="mb-4 flex items-center justify-between">
                                 <div
-                                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white transition-transform group-hover:scale-110"
+                                    class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
                                 >
-                                    <BarChart3 class="h-6 w-6" />
+                                    <Calendar class="h-7 w-7 text-white" />
                                 </div>
-                                <div>
-                                    <h3
-                                        class="font-semibold text-neutral-900 dark:text-white"
+                                <div
+                                    class="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                                >
+                                    <Clock class="h-3 w-3" />
+                                    <span class="text-xs font-semibold"
+                                        >3 today</span
                                     >
-                                        Analytics
-                                    </h3>
-                                    <p
-                                        class="mt-1 text-xs text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        View insights
-                                    </p>
                                 </div>
                             </div>
+                            <div>
+                                <h3
+                                    class="text-3xl font-bold text-neutral-900 dark:text-white"
+                                >
+                                    {{ stats.scheduled_posts || 0 }}
+                                </h3>
+                                <p
+                                    class="mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Scheduled Posts
+                                </p>
+                                <p
+                                    class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                                >
+                                    Ready to publish
+                                </p>
+                            </div>
                         </div>
-                    </Link>
+                    </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <!-- Enhanced Recent Posts -->
-                <Card class="lg:col-span-2">
-                    <div class="mb-6 flex items-center justify-between">
-                        <div>
-                            <h2
-                                class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
+                <!-- Enhanced Quick Actions -->
+                <div class="card-elevated relative overflow-hidden">
+                    <div
+                        class="from-brand-primary via-brand-accent to-brand-primary absolute left-0 top-0 h-1 w-full bg-gradient-to-r"
+                    ></div>
+                    <div class="mb-8">
+                        <h2
+                            class="text-headline-2 mb-3 text-neutral-900 dark:text-white"
+                        >
+                            Quick Actions
+                        </h2>
+                        <p
+                            class="text-body-large text-neutral-600 dark:text-neutral-400"
+                        >
+                            Get started with these common tasks
+                        </p>
+                    </div>
+                    <div
+                        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                    >
+                        <!-- Create Post -->
+                        <Link href="/social/posts/create" class="group">
+                            <div
+                                class="hover:border-brand-primary hover:shadow-brand cursor-pointer rounded-2xl border border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:scale-105 hover:bg-white dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
                             >
-                                Recent Posts
-                            </h2>
-                            <p
-                                class="text-body text-neutral-600 dark:text-neutral-400"
+                                <div
+                                    class="flex flex-col items-center space-y-4 text-center"
+                                >
+                                    <div
+                                        class="from-brand-primary to-brand-accent flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
+                                    >
+                                        <Edit class="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h3
+                                            class="text-headline-4 font-bold text-neutral-900 dark:text-white"
+                                        >
+                                            Create Post
+                                        </h3>
+                                        <p
+                                            class="mt-2 text-sm text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            Compose new content
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <!-- AI Generator -->
+                        <Link href="/ai/generator" class="group">
+                            <div
+                                class="hover:border-brand-primary relative cursor-pointer rounded-2xl border border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:scale-105 hover:bg-white dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
                             >
-                                Your latest social media activity
-                            </p>
-                        </div>
-                        <Link href="/social/posts/history">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="hover:bg-brand-primary transition-colors hover:text-white"
+                                <div class="absolute -right-2 -top-2">
+                                    <div
+                                        class="flex h-8 w-8 animate-pulse items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg"
+                                    >
+                                        <Crown class="h-4 w-4 text-white" />
+                                    </div>
+                                </div>
+                                <div
+                                    class="flex flex-col items-center space-y-4 text-center"
+                                >
+                                    <div
+                                        class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
+                                    >
+                                        <BrainCircuit class="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h3
+                                            class="text-headline-4 font-bold text-neutral-900 dark:text-white"
+                                        >
+                                            AI Generator
+                                        </h3>
+                                        <p
+                                            class="mt-2 text-sm text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            Powered content
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <!-- Schedule Post -->
+                        <Link href="/calendar" class="group">
+                            <div
+                                class="hover:border-brand-primary cursor-pointer rounded-2xl border border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:scale-105 hover:bg-white dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
                             >
-                                <Eye class="mr-2 h-4 w-4" />
-                                View All
-                            </Button>
+                                <div
+                                    class="flex flex-col items-center space-y-4 text-center"
+                                >
+                                    <div
+                                        class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
+                                    >
+                                        <CalendarDays class="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h3
+                                            class="text-headline-4 font-bold text-neutral-900 dark:text-white"
+                                        >
+                                            Schedule
+                                        </h3>
+                                        <p
+                                            class="mt-2 text-sm text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            Plan ahead
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <!-- Analytics -->
+                        <Link href="/analytics/dashboard" class="group">
+                            <div
+                                class="hover:border-brand-primary cursor-pointer rounded-2xl border border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:scale-105 hover:bg-white dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
+                            >
+                                <div
+                                    class="flex flex-col items-center space-y-4 text-center"
+                                >
+                                    <div
+                                        class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg transition-all group-hover:rotate-3 group-hover:scale-110"
+                                    >
+                                        <BarChart3 class="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h3
+                                            class="text-headline-4 font-bold text-neutral-900 dark:text-white"
+                                        >
+                                            Analytics
+                                        </h3>
+                                        <p
+                                            class="mt-2 text-sm text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            View insights
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </Link>
                     </div>
+                </div>
 
-                    <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <!-- Enhanced Recent Posts -->
+                    <Card class="relative overflow-hidden lg:col-span-2">
                         <div
-                            v-if="recent_posts.length === 0"
-                            class="py-12 text-center"
-                        >
-                            <div
-                                class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
-                            >
-                                <FileText class="h-8 w-8 text-neutral-400" />
+                            class="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                        ></div>
+                        <div class="mb-6 flex items-center justify-between">
+                            <div>
+                                <h2
+                                    class="text-headline-2 mb-3 text-neutral-900 dark:text-white"
+                                >
+                                    Recent Posts
+                                </h2>
+                                <p
+                                    class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Your latest social media activity
+                                </p>
                             </div>
-                            <h3
-                                class="text-headline-4 mb-2 text-neutral-900 dark:text-white"
-                            >
-                                No posts yet
-                            </h3>
-                            <p
-                                class="text-body mb-4 text-neutral-600 dark:text-neutral-400"
-                            >
-                                Create your first post to get started!
-                            </p>
-                            <Link href="/social/posts/create">
-                                <Button class="btn-primary">
-                                    <PlusCircle class="mr-2 h-4 w-4" />
-                                    Create Your First Post
+                            <Link href="/social/posts/history">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="hover:bg-brand-primary hover:border-brand-primary transition-all duration-300 hover:scale-105 hover:text-white"
+                                >
+                                    <Eye class="mr-2 h-4 w-4" />
+                                    View All
                                 </Button>
                             </Link>
                         </div>
 
-                        <div
-                            v-for="post in recent_posts"
-                            :key="post.id"
-                            class="rounded-xl border border-neutral-200 p-4 transition-all duration-200 hover:shadow-md dark:border-neutral-700"
-                        >
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="mb-3 flex items-center gap-3">
-                                        <component
-                                            :is="getStatusIcon(post.status)"
-                                            class="h-5 w-5"
-                                            :class="{
-                                                'text-green-500':
-                                                    post.status === 'published',
-                                                'text-blue-500':
-                                                    post.status === 'scheduled',
-                                                'text-gray-500':
-                                                    post.status === 'draft',
-                                                'text-red-500':
-                                                    post.status === 'failed',
-                                            }"
-                                        />
-                                        <Badge
-                                            :variant="
-                                                getStatusColor(post.status)
-                                            "
-                                            class="text-xs"
+                        <div class="space-y-4">
+                            <div
+                                v-if="recent_posts.length === 0"
+                                class="py-12 text-center"
+                            >
+                                <div
+                                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
+                                >
+                                    <FileText
+                                        class="h-8 w-8 text-neutral-400"
+                                    />
+                                </div>
+                                <h3
+                                    class="text-headline-4 mb-2 text-neutral-900 dark:text-white"
+                                >
+                                    No posts yet
+                                </h3>
+                                <p
+                                    class="text-body mb-4 text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Create your first post to get started!
+                                </p>
+                                <Link href="/social/posts/create">
+                                    <Button class="btn-primary">
+                                        <PlusCircle class="mr-2 h-4 w-4" />
+                                        Create Your First Post
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            <div
+                                v-for="post in recent_posts"
+                                :key="post.id"
+                                class="rounded-2xl border border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:scale-[1.02] hover:bg-white hover:shadow-lg dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div
+                                            class="mb-4 flex items-center gap-3"
                                         >
-                                            {{ post.status }}
-                                        </Badge>
-                                        <div class="flex gap-2">
-                                            <span
-                                                v-for="platform in post.platforms"
-                                                :key="platform"
-                                                class="text-xl"
-                                                :title="platform"
+                                            <div
+                                                class="flex h-10 w-10 items-center justify-center rounded-xl"
+                                                :class="{
+                                                    'bg-emerald-100 dark:bg-emerald-900/30':
+                                                        post.status ===
+                                                        'published',
+                                                    'bg-blue-100 dark:bg-blue-900/30':
+                                                        post.status ===
+                                                        'scheduled',
+                                                    'bg-gray-100 dark:bg-gray-900/30':
+                                                        post.status === 'draft',
+                                                    'bg-red-100 dark:bg-red-900/30':
+                                                        post.status ===
+                                                        'failed',
+                                                }"
                                             >
-                                                {{ getPlatformIcon(platform) }}
+                                                <component
+                                                    :is="
+                                                        getStatusIcon(
+                                                            post.status,
+                                                        )
+                                                    "
+                                                    class="h-5 w-5"
+                                                    :class="{
+                                                        'text-emerald-600 dark:text-emerald-400':
+                                                            post.status ===
+                                                            'published',
+                                                        'text-blue-600 dark:text-blue-400':
+                                                            post.status ===
+                                                            'scheduled',
+                                                        'text-gray-600 dark:text-gray-400':
+                                                            post.status ===
+                                                            'draft',
+                                                        'text-red-600 dark:text-red-400':
+                                                            post.status ===
+                                                            'failed',
+                                                    }"
+                                                />
+                                            </div>
+                                            <Badge
+                                                :variant="
+                                                    getStatusColor(post.status)
+                                                "
+                                                class="px-3 py-1 text-xs font-semibold"
+                                            >
+                                                {{ post.status }}
+                                            </Badge>
+                                            <div class="flex gap-3">
+                                                <span
+                                                    v-for="platform in post.platforms"
+                                                    :key="platform"
+                                                    class="cursor-pointer text-2xl transition-transform hover:scale-110"
+                                                    :title="platform"
+                                                >
+                                                    {{
+                                                        getPlatformIcon(
+                                                            platform,
+                                                        )
+                                                    }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p
+                                            class="text-body-large mb-4 line-clamp-3 leading-relaxed text-neutral-700 dark:text-neutral-300"
+                                        >
+                                            {{ post.content }}
+                                        </p>
+                                        <div
+                                            class="flex items-center gap-8 text-sm text-neutral-500 dark:text-neutral-500"
+                                        >
+                                            <span
+                                                class="flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 dark:bg-neutral-800"
+                                            >
+                                                <Calendar class="h-4 w-4" />
+                                                {{
+                                                    formatDate(post.created_at)
+                                                }}
+                                            </span>
+                                            <span
+                                                v-if="post.scheduled_for"
+                                                class="flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                                            >
+                                                <Clock class="h-4 w-4" />
+                                                {{
+                                                    formatDateTime(
+                                                        post.scheduled_for,
+                                                    )
+                                                }}
+                                            </span>
+                                            <span
+                                                v-if="post.engagement > 0"
+                                                class="flex items-center gap-2 rounded-full bg-pink-100 px-3 py-1 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400"
+                                            >
+                                                <Heart class="h-4 w-4" />
+                                                {{
+                                                    formatNumber(
+                                                        post.engagement,
+                                                    )
+                                                }}
+                                                engagement
                                             </span>
                                         </div>
                                     </div>
+                                    <div class="ml-6">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 rounded-xl p-0 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                        >
+                                            <MoreHorizontal class="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <!-- Enhanced Connected Accounts & Upcoming Posts -->
+                    <div class="space-y-6">
+                        <!-- Connected Accounts -->
+                        <div class="card-elevated relative overflow-hidden">
+                            <div
+                                class="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500"
+                            ></div>
+                            <div class="mb-6 flex items-center justify-between">
+                                <h2
+                                    class="text-headline-3 text-neutral-900 dark:text-white"
+                                >
+                                    Connected Accounts
+                                </h2>
+                                <Link href="/social/accounts">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="hover:bg-brand-primary hover:border-brand-primary transition-all duration-300 hover:scale-105 hover:text-white"
+                                    >
+                                        Manage
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div
+                                    v-if="connected_accounts.length === 0"
+                                    class="py-8 text-center"
+                                >
+                                    <div
+                                        class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
+                                    >
+                                        <Users
+                                            class="h-6 w-6 text-neutral-400"
+                                        />
+                                    </div>
+                                    <h3
+                                        class="text-body mb-1 font-medium text-neutral-900 dark:text-white"
+                                    >
+                                        No accounts connected
+                                    </h3>
                                     <p
-                                        class="text-body mb-3 line-clamp-2 text-neutral-700 dark:text-neutral-300"
+                                        class="text-body-small mb-4 text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        Connect your social media accounts to
+                                        get started
+                                    </p>
+                                    <Link href="/social/accounts">
+                                        <Button size="sm" class="btn-primary">
+                                            <PlusCircle class="mr-2 h-4 w-4" />
+                                            Connect Account
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                <div
+                                    v-for="account in connected_accounts"
+                                    :key="account.id"
+                                    class="flex items-center justify-between rounded-2xl border border-neutral-200/60 bg-white/50 p-4 transition-all duration-300 hover:scale-[1.02] hover:bg-white hover:shadow-lg dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
+                                >
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-md dark:from-neutral-800 dark:to-neutral-700"
+                                        >
+                                            <span class="text-2xl">{{
+                                                getPlatformIcon(
+                                                    account.platform,
+                                                )
+                                            }}</span>
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-body-large font-semibold text-neutral-900 dark:text-white"
+                                            >
+                                                {{ account.username }}
+                                            </p>
+                                            <p
+                                                class="text-body text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                {{
+                                                    account.platform_display_name
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <Badge
+                                            :variant="
+                                                account.is_token_expired
+                                                    ? 'destructive'
+                                                    : 'default'
+                                            "
+                                            class="px-3 py-1 text-xs font-semibold"
+                                        >
+                                            {{
+                                                account.is_token_expired
+                                                    ? 'Expired'
+                                                    : 'Active'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Posts -->
+                        <div class="card-elevated relative overflow-hidden">
+                            <div
+                                class="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                            ></div>
+                            <div class="mb-6">
+                                <h2
+                                    class="text-headline-3 mb-3 text-neutral-900 dark:text-white"
+                                >
+                                    Upcoming Posts
+                                </h2>
+                                <p
+                                    class="text-body text-neutral-600 dark:text-neutral-400"
+                                >
+                                    Posts scheduled for the next few days
+                                </p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div
+                                    v-if="upcoming_posts.length === 0"
+                                    class="py-8 text-center"
+                                >
+                                    <div
+                                        class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
+                                    >
+                                        <Calendar
+                                            class="h-6 w-6 text-neutral-400"
+                                        />
+                                    </div>
+                                    <h3
+                                        class="text-body mb-1 font-medium text-neutral-900 dark:text-white"
+                                    >
+                                        No upcoming posts
+                                    </h3>
+                                    <p
+                                        class="text-body-small mb-4 text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        Schedule your first post to automate
+                                        your social media
+                                    </p>
+                                    <Link href="/social/posts/create">
+                                        <Button size="sm" class="btn-primary">
+                                            <PlusCircle class="mr-2 h-4 w-4" />
+                                            Schedule Post
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                <div
+                                    v-for="post in upcoming_posts"
+                                    :key="post.id"
+                                    class="rounded-2xl border border-neutral-200/60 bg-white/50 p-5 transition-all duration-300 hover:scale-[1.02] hover:bg-white hover:shadow-lg dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
+                                >
+                                    <div class="mb-4 flex items-center gap-4">
+                                        <div
+                                            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-md dark:from-neutral-800 dark:to-neutral-700"
+                                        >
+                                            <span class="text-2xl">{{
+                                                getPlatformIcon(post.platform)
+                                            }}</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p
+                                                class="text-body-large font-semibold text-neutral-900 dark:text-white"
+                                            >
+                                                @{{ post.account_username }}
+                                            </p>
+                                            <p
+                                                class="text-body text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                {{ post.platform_display_name }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p
+                                        class="text-body-large mb-4 line-clamp-3 leading-relaxed text-neutral-700 dark:text-neutral-300"
                                     >
                                         {{ post.content }}
                                     </p>
                                     <div
-                                        class="flex items-center gap-6 text-xs text-neutral-500 dark:text-neutral-500"
+                                        class="text-body flex w-fit items-center gap-2 rounded-xl bg-blue-100 px-3 py-2 text-blue-600 text-neutral-500 dark:bg-blue-900/30 dark:text-blue-400 dark:text-neutral-500"
                                     >
-                                        <span class="flex items-center gap-1">
-                                            <Calendar class="h-3 w-3" />
-                                            {{ formatDate(post.created_at) }}
-                                        </span>
-                                        <span
-                                            v-if="post.scheduled_for"
-                                            class="flex items-center gap-1"
-                                        >
-                                            <Clock class="h-3 w-3" />
-                                            {{
-                                                formatDateTime(
-                                                    post.scheduled_for,
-                                                )
-                                            }}
-                                        </span>
-                                        <span
-                                            v-if="post.engagement > 0"
-                                            class="flex items-center gap-1"
-                                        >
-                                            <Heart class="h-3 w-3" />
-                                            {{ formatNumber(post.engagement) }}
-                                            engagement
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-8 w-8 p-0"
-                                    >
-                                        <MoreHorizontal class="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-
-                <!-- Enhanced Connected Accounts & Upcoming Posts -->
-                <div class="space-y-6">
-                    <!-- Connected Accounts -->
-                    <div class="card-elevated">
-                        <div class="mb-6 flex items-center justify-between">
-                            <h2
-                                class="text-headline-4 text-neutral-900 dark:text-white"
-                            >
-                                Connected Accounts
-                            </h2>
-                            <Link href="/social/accounts">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    class="hover:bg-brand-primary transition-colors hover:text-white"
-                                >
-                                    Manage
-                                </Button>
-                            </Link>
-                        </div>
-
-                        <div class="space-y-3">
-                            <div
-                                v-if="connected_accounts.length === 0"
-                                class="py-8 text-center"
-                            >
-                                <div
-                                    class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
-                                >
-                                    <Users class="h-6 w-6 text-neutral-400" />
-                                </div>
-                                <h3
-                                    class="text-body mb-1 font-medium text-neutral-900 dark:text-white"
-                                >
-                                    No accounts connected
-                                </h3>
-                                <p
-                                    class="text-body-small mb-4 text-neutral-600 dark:text-neutral-400"
-                                >
-                                    Connect your social media accounts to get
-                                    started
-                                </p>
-                                <Link href="/social/accounts">
-                                    <Button size="sm" class="btn-primary">
-                                        <PlusCircle class="mr-2 h-4 w-4" />
-                                        Connect Account
-                                    </Button>
-                                </Link>
-                            </div>
-
-                            <div
-                                v-for="account in connected_accounts"
-                                :key="account.id"
-                                class="flex items-center justify-between rounded-xl border border-neutral-200 p-3 transition-all duration-200 hover:shadow-sm dark:border-neutral-700"
-                            >
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800"
-                                    >
-                                        <span class="text-xl">{{
-                                            getPlatformIcon(account.platform)
+                                        <Clock class="h-4 w-4" />
+                                        <span>{{
+                                            formatDateTime(post.scheduled_for)
                                         }}</span>
                                     </div>
-                                    <div>
-                                        <p
-                                            class="text-body font-medium text-neutral-900 dark:text-white"
-                                        >
-                                            {{ account.username }}
-                                        </p>
-                                        <p
-                                            class="text-body-small text-neutral-600 dark:text-neutral-400"
-                                        >
-                                            {{ account.platform_display_name }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <Badge
-                                        :variant="
-                                            account.is_token_expired
-                                                ? 'destructive'
-                                                : 'default'
-                                        "
-                                        class="text-xs"
-                                    >
-                                        {{
-                                            account.is_token_expired
-                                                ? 'Expired'
-                                                : 'Active'
-                                        }}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Posts -->
-                    <div class="card-elevated">
-                        <div class="mb-6">
-                            <h2
-                                class="text-headline-4 mb-2 text-neutral-900 dark:text-white"
-                            >
-                                Upcoming Posts
-                            </h2>
-                            <p
-                                class="text-body-small text-neutral-600 dark:text-neutral-400"
-                            >
-                                Posts scheduled for the next few days
-                            </p>
-                        </div>
-
-                        <div class="space-y-3">
-                            <div
-                                v-if="upcoming_posts.length === 0"
-                                class="py-8 text-center"
-                            >
-                                <div
-                                    class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800"
-                                >
-                                    <Calendar
-                                        class="h-6 w-6 text-neutral-400"
-                                    />
-                                </div>
-                                <h3
-                                    class="text-body mb-1 font-medium text-neutral-900 dark:text-white"
-                                >
-                                    No upcoming posts
-                                </h3>
-                                <p
-                                    class="text-body-small mb-4 text-neutral-600 dark:text-neutral-400"
-                                >
-                                    Schedule your first post to automate your
-                                    social media
-                                </p>
-                                <Link href="/social/posts/create">
-                                    <Button size="sm" class="btn-primary">
-                                        <PlusCircle class="mr-2 h-4 w-4" />
-                                        Schedule Post
-                                    </Button>
-                                </Link>
-                            </div>
-
-                            <div
-                                v-for="post in upcoming_posts"
-                                :key="post.id"
-                                class="rounded-xl border border-neutral-200 p-4 transition-all duration-200 hover:shadow-sm dark:border-neutral-700"
-                            >
-                                <div class="mb-3 flex items-center gap-3">
-                                    <div
-                                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800"
-                                    >
-                                        <span class="text-lg">{{
-                                            getPlatformIcon(post.platform)
-                                        }}</span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p
-                                            class="text-body-small font-medium text-neutral-900 dark:text-white"
-                                        >
-                                            @{{ post.account_username }}
-                                        </p>
-                                        <p
-                                            class="text-body-small text-neutral-600 dark:text-neutral-400"
-                                        >
-                                            {{ post.platform_display_name }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <p
-                                    class="text-body mb-3 line-clamp-2 text-neutral-700 dark:text-neutral-300"
-                                >
-                                    {{ post.content }}
-                                </p>
-                                <div
-                                    class="text-body-small flex items-center gap-2 text-neutral-500 dark:text-neutral-500"
-                                >
-                                    <Clock class="h-3 w-3" />
-                                    <span>{{
-                                        formatDateTime(post.scheduled_for)
-                                    }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Enhanced Analytics Summary (if available) -->
-            <Card v-if="analytics_summary.posts_with_analytics > 0">
+                <!-- Enhanced Analytics Summary (if available) -->
+                <Card v-if="analytics_summary.posts_with_analytics > 0">
                     <div class="mb-6">
                         <h2
                             class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
@@ -942,6 +1009,7 @@ const formatNumber = (num) => {
                         </div>
                     </div>
                 </Card>
+            </div>
         </div>
     </AppLayout>
 </template>

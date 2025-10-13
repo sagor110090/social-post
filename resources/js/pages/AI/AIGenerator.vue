@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Card from '@/components/ui/card/Card.vue';
 import {
     Select,
     SelectContent,
@@ -229,59 +230,63 @@ const getToneEmoji = (tone) => {
 
 <template>
     <AppLayout title="AI Content Generator">
-        <div class="mx-auto max-w-7xl space-y-8">
-            <!-- Enhanced Header -->
-            <div class="text-center">
-                <div
-                    class="mb-6 inline-flex items-center gap-3 rounded-full border border-purple-200 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 dark:border-purple-800 dark:from-purple-900/30 dark:to-pink-900/30"
-                >
-                    <BrainCircuit
-                        class="h-5 w-5 text-purple-600 dark:text-purple-400"
-                    />
-                    <span
-                        class="text-body font-medium text-purple-700 dark:text-purple-300"
-                        >Powered by Advanced AI</span
+        <div class="min-h-screen">
+            <div class="mx-auto max-w-7xl space-y-8 p-6">
+                <!-- Enhanced Header -->
+                <div class="text-center animate-fade-in">
+                    <div
+                        class="mb-8 inline-flex items-center gap-3 rounded-full border border-purple-200/60 bg-gradient-to-r from-purple-100/80 to-pink-100/80 px-6 py-3 shadow-lg backdrop-blur-sm dark:border-purple-800/60 dark:from-purple-900/40 dark:to-pink-900/40"
                     >
+                        <div class="relative">
+                            <BrainCircuit
+                                class="h-6 w-6 text-purple-600 dark:text-purple-400 animate-pulse"
+                            />
+                            <div class="absolute -inset-1 bg-purple-400 rounded-full opacity-30 blur animate-ping"></div>
+                        </div>
+                        <span
+                            class="text-body-large font-semibold text-purple-700 dark:text-purple-300"
+                            >Powered by Advanced AI</span
+                        >
+                    </div>
+                    <h1
+                        class="text-display-1 mb-6 text-neutral-900 dark:text-white"
+                    >
+                        AI Content <span class="text-gradient font-bold">Generator</span> ✨
+                    </h1>
+                    <p
+                        class="text-body-large mx-auto mb-8 max-w-4xl text-neutral-600 dark:text-neutral-400 leading-relaxed animate-slide-up"
+                    >
+                        Transform your ideas into compelling social media content
+                        with the power of artificial intelligence. Create engaging
+                        posts in seconds, not hours.
+                    </p>
+                    <Button
+                        @click="showTemplates = !showTemplates"
+                        class="btn-secondary hover-glow animate-slide-up"
+                    >
+                        <Lightbulb class="mr-3 h-5 w-5" />
+                        {{ showTemplates ? 'Hide' : 'Show' }} Templates
+                    </Button>
                 </div>
-                <h1
-                    class="text-display-1 mb-4 text-neutral-900 dark:text-white"
-                >
-                    AI Content <span class="text-gradient">Generator</span> 🤖
-                </h1>
-                <p
-                    class="text-body-large mx-auto mb-8 max-w-3xl text-neutral-600 dark:text-neutral-400"
-                >
-                    Transform your ideas into compelling social media content
-                    with the power of artificial intelligence. Create engaging
-                    posts in seconds, not hours.
-                </p>
-                <Button
-                    variant="outline"
-                    @click="showTemplates = !showTemplates"
-                    class="btn-secondary"
-                >
-                    <Lightbulb class="mr-2 h-4 w-4" />
-                    {{ showTemplates ? 'Hide' : 'Show' }} Templates
-                </Button>
-            </div>
 
             <!-- Enhanced Templates Panel -->
             <div
                 v-if="showTemplates"
-                class="rounded-xl border bg-card text-card-foreground shadow-sm"
+                class="card-elevated relative overflow-hidden animate-slide-up"
             >
-                <div class="mb-6">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500"></div>
+                <div class="mb-8">
                     <h2
-                        class="text-headline-2 mb-2 flex items-center gap-3 text-neutral-900 dark:text-white"
+                        class="text-headline-1 mb-4 flex items-center gap-4 text-neutral-900 dark:text-white"
                     >
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500"
+                            class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg"
                         >
-                            <Lightbulb class="h-5 w-5 text-white" />
+                            <Lightbulb class="h-7 w-7 text-white" />
                         </div>
                         Content Templates
                     </h2>
-                    <p class="text-body text-neutral-600 dark:text-neutral-400">
+                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
                         Quick-start templates for common social media scenarios
                     </p>
                 </div>
@@ -291,33 +296,33 @@ const getToneEmoji = (tone) => {
                     <div
                         v-for="template in templates"
                         :key="template.id"
-                        class="group hover:border-brand-primary cursor-pointer rounded-xl border-2 border-neutral-200 p-6 transition-all duration-200 hover:shadow-lg dark:border-neutral-700"
+                        class="group hover:border-brand-primary cursor-pointer rounded-2xl border-2 border-neutral-200/60 bg-white/50 p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 hover:bg-white dark:border-neutral-700/60 dark:bg-neutral-800/50 dark:hover:bg-neutral-800/80"
                         @click="selectTemplate(template)"
                     >
-                        <div class="mb-4 flex items-start justify-between">
+                        <div class="mb-6 flex items-start justify-between">
                             <div
-                                class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 transition-transform group-hover:scale-110 dark:from-purple-900/30 dark:to-pink-900/30"
+                                class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 transition-all group-hover:scale-110 group-hover:rotate-3 shadow-md dark:from-purple-900/30 dark:to-pink-900/30"
                             >
                                 <BrainCircuit
-                                    class="h-6 w-6 text-purple-600 dark:text-purple-400"
+                                    class="h-7 w-7 text-purple-600 dark:text-purple-400"
                                 />
                             </div>
-                            <Badge variant="secondary" class="text-xs">
+                            <Badge variant="secondary" class="text-xs font-semibold px-3 py-1">
                                 {{ template.category }}
                             </Badge>
                         </div>
                         <h3
-                            class="text-headline-4 group-hover:text-brand-primary mb-2 text-neutral-900 transition-colors dark:text-white"
+                            class="text-headline-3 group-hover:text-brand-primary mb-3 text-neutral-900 transition-colors dark:text-white"
                         >
                             {{ template.name }}
                         </h3>
                         <p
-                            class="text-body mb-4 line-clamp-2 text-neutral-600 dark:text-neutral-400"
+                            class="text-body-large mb-6 line-clamp-3 text-neutral-600 dark:text-neutral-400 leading-relaxed"
                         >
                             {{ template.prompt }}
                         </p>
-                        <div class="flex items-center gap-2">
-                            <Badge variant="outline" class="text-xs">
+                        <div class="flex items-center gap-3">
+                            <Badge variant="outline" class="text-xs font-semibold">
                                 {{ template.tones.join(', ') }}
                             </Badge>
                         </div>
@@ -328,16 +333,17 @@ const getToneEmoji = (tone) => {
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 <!-- Enhanced Input Form -->
                 <div
-                    class="rounded-xl border bg-card text-card-foreground shadow-sm"
+                    class="card-elevated relative overflow-hidden"
                 >
-                    <div class="mb-6">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary to-brand-accent"></div>
+                    <div class="mb-8">
                         <h2
-                            class="text-headline-2 mb-2 text-neutral-900 dark:text-white"
+                            class="text-headline-1 mb-4 text-neutral-900 dark:text-white"
                         >
                             Create Content
                         </h2>
                         <p
-                            class="text-body text-neutral-600 dark:text-neutral-400"
+                            class="text-body-large text-neutral-600 dark:text-neutral-400"
                         >
                             Describe what you want to post about and customize
                             the settings
@@ -346,27 +352,29 @@ const getToneEmoji = (tone) => {
 
                     <div class="space-y-8">
                         <!-- Enhanced Platform Selection -->
-                        <div class="space-y-3">
+                        <div class="space-y-4">
                             <label
-                                class="text-body flex items-center gap-2 font-medium text-neutral-700 dark:text-neutral-300"
+                                class="text-body-large flex items-center gap-3 font-semibold text-neutral-700 dark:text-neutral-300"
                             >
-                                <svg
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                                    />
-                                </svg>
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/10">
+                                    <svg
+                                        class="h-5 w-5 text-brand-primary"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                                        />
+                                    </svg>
+                                </div>
                                 Target Platform
                             </label>
                             <Select v-model="form.platform">
-                                <SelectTrigger class="input-field">
+                                <SelectTrigger class="input-field h-12 text-base">
                                     <SelectValue
                                         placeholder="Select platform"
                                     />
@@ -377,16 +385,16 @@ const getToneEmoji = (tone) => {
                                         :key="platform.value"
                                         :value="platform.value"
                                     >
-                                        <span class="flex items-center gap-3">
-                                            <span class="text-xl">{{
+                                        <span class="flex items-center gap-4 py-2">
+                                            <span class="text-2xl">{{
                                                 platform.icon
                                             }}</span>
                                             <div>
-                                                <div class="font-medium">
+                                                <div class="font-semibold text-base">
                                                     {{ platform.label }}
                                                 </div>
                                                 <div
-                                                    class="text-xs text-neutral-500"
+                                                    class="text-sm text-neutral-500 dark:text-neutral-400"
                                                 >
                                                     {{
                                                         characterLimits[
@@ -401,23 +409,25 @@ const getToneEmoji = (tone) => {
                                 </SelectContent>
                             </Select>
                             <div
-                                class="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20"
+                                class="flex items-center gap-3 rounded-2xl border border-blue-200/60 bg-blue-50/80 p-4 backdrop-blur-sm dark:border-blue-800/60 dark:bg-blue-900/30"
                             >
-                                <svg
-                                    class="h-4 w-4 text-blue-600 dark:text-blue-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
+                                    <svg
+                                        class="h-4 w-4 text-white"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                </div>
                                 <p
-                                    class="text-body-small text-blue-700 dark:text-blue-300"
+                                    class="text-body font-medium text-blue-700 dark:text-blue-300"
                                 >
                                     Character limit:
                                     {{ currentCharacterLimit.toLocaleString() }}
@@ -616,7 +626,7 @@ const getToneEmoji = (tone) => {
                 </div>
 
                 <!-- Enhanced Generated Content -->
-                <div
+                <Card
                     class="rounded-xl border bg-card text-card-foreground shadow-sm"
                 >
                     <div class="mb-6">
@@ -877,8 +887,9 @@ const getToneEmoji = (tone) => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
+        </div>
         </div>
     </AppLayout>
 </template>

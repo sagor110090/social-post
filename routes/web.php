@@ -17,6 +17,5 @@ require __DIR__.'/ai.php';
 require __DIR__.'/social.php';
 require __DIR__.'/media.php';
 require __DIR__.'/calendar.php';
-require __DIR__.'/billing.php';
 require __DIR__.'/analytics.php';
 require __DIR__.'/admin.php';
