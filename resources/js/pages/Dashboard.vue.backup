@@ -173,7 +173,7 @@ const formatNumber = (num) => {
             <!-- Enhanced Stats Grid -->
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <!-- Total Posts Card -->
-                <div class="card-elevated hover-lift group">
+                <Card class="hover-lift group">
                     <div class="mb-4 flex items-center justify-between">
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 transition-transform group-hover:scale-110 dark:bg-blue-900/30"
@@ -206,10 +206,10 @@ const formatNumber = (num) => {
                             {{ stats.published_posts || 0 }} published
                         </p>
                     </div>
-                </div>
+                </Card>
 
                 <!-- Connected Accounts Card -->
-                <div class="card-elevated hover-lift group">
+                <Card class="hover-lift group">
                     <div class="mb-4 flex items-center justify-between">
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 transition-transform group-hover:scale-110 dark:bg-purple-900/30"
@@ -242,10 +242,10 @@ const formatNumber = (num) => {
                             All platforms active
                         </p>
                     </div>
-                </div>
+                </Card>
 
                 <!-- Total Engagement Card -->
-                <div class="card-elevated hover-lift group">
+                <Card class="hover-lift group">
                     <div class="mb-4 flex items-center justify-between">
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 transition-transform group-hover:scale-110 dark:bg-green-900/30"
@@ -278,10 +278,10 @@ const formatNumber = (num) => {
                             {{ engagementRate }}% engagement rate
                         </p>
                     </div>
-                </div>
+                </Card>
 
                 <!-- Scheduled Posts Card -->
-                <div class="card-elevated hover-lift group">
+                <Card class="hover-lift group">
                     <div class="mb-4 flex items-center justify-between">
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 transition-transform group-hover:scale-110 dark:bg-orange-900/30"
@@ -314,11 +314,11 @@ const formatNumber = (num) => {
                             Ready to publish
                         </p>
                     </div>
-                </div>
+                </Card>
             </div>
 
             <!-- Enhanced Quick Actions -->
-            <div class="card-elevated">
+            <Card>
                 <div class="mb-6">
                     <h2
                         class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
@@ -455,7 +455,7 @@ const formatNumber = (num) => {
                         </div>
                     </Link>
                 </div>
-            </div>
+            </Card>
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <!-- Enhanced Recent Posts -->
@@ -604,7 +604,7 @@ const formatNumber = (num) => {
                 <!-- Enhanced Connected Accounts & Upcoming Posts -->
                 <div class="space-y-6">
                     <!-- Connected Accounts -->
-                    <div class="card-elevated">
+                    <Card>
                         <div class="mb-6 flex items-center justify-between">
                             <h2
                                 class="text-headline-4 text-neutral-900 dark:text-white"
@@ -695,10 +695,10 @@ const formatNumber = (num) => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
                     <!-- Upcoming Posts -->
-                    <div class="card-elevated">
+                    <Card>
                         <div class="mb-6">
                             <h2
                                 class="text-headline-4 mb-2 text-neutral-900 dark:text-white"
@@ -784,12 +784,11 @@ const formatNumber = (num) => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                </Card>
             </div>
 
             <!-- Enhanced Analytics Summary (if available) -->
-            <Card v-if="analytics_summary.posts_with_analytics > 0">
+                <Card v-if="analytics_summary.posts_with_analytics > 0">
                     <div class="mb-6">
                         <h2
                             class="text-headline-3 mb-2 text-neutral-900 dark:text-white"

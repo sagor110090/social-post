@@ -2,10 +2,10 @@
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import CreatePostButton from '@/components/QuickActions/CreatePostButton.vue';
 import GlobalSearch from '@/components/Search/GlobalSearch.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -101,7 +101,7 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 // Add click outside listener when dropdown is open
-import { watchEffect, onUnmounted } from 'vue';
+import { onUnmounted, watchEffect } from 'vue';
 
 watchEffect(() => {
     if (openDropdown.value) {
@@ -177,7 +177,9 @@ const rightNavItems: NavItem[] = [
 
 <template>
     <div>
-        <div class="border-b border-sidebar-border/80">
+        <div
+            class="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/80 backdrop-blur-sm dark:border-neutral-700/80 dark:bg-neutral-900/80"
+        >
             <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                 <!-- Mobile Menu -->
                 <div class="lg:hidden">
@@ -279,7 +281,10 @@ const rightNavItems: NavItem[] = [
                     </Sheet>
                 </div>
 
-                <Link :href="dashboard()" class="flex items-center gap-x-2">
+                <Link
+                    :href="dashboard()"
+                    class="flex items-center gap-x-3 transition-opacity hover:opacity-80"
+                >
                     <AppLogo />
                 </Link>
 
@@ -289,15 +294,17 @@ const rightNavItems: NavItem[] = [
                         <div
                             v-for="(item, index) in mainNavItems"
                             :key="index"
-                            class="relative flex h-full items-center dropdown-container"
+                            class="dropdown-container relative flex h-full items-center"
                         >
                             <template v-if="item.children">
                                 <button
                                     type="button"
                                     :class="[
-                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1',
+                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50',
                                         activeItemStyles(item.href),
-                                        openDropdown === item.title ? 'bg-accent/50 text-accent-foreground' : '',
+                                        openDropdown === item.title
+                                            ? 'bg-accent/50 text-accent-foreground'
+                                            : '',
                                     ]"
                                     @click="toggleDropdown(item.title)"
                                 >
@@ -309,7 +316,10 @@ const rightNavItems: NavItem[] = [
                                     {{ item.title }}
                                     <ChevronDown
                                         class="relative top-[1px] ml-1 size-3 transition duration-300"
-                                        :class="{ 'rotate-180': openDropdown === item.title }"
+                                        :class="{
+                                            'rotate-180':
+                                                openDropdown === item.title,
+                                        }"
                                         aria-hidden="true"
                                     />
                                 </button>
@@ -319,7 +329,9 @@ const rightNavItems: NavItem[] = [
                                     @click.stop
                                 >
                                     <div class="p-2">
-                                        <div class="px-3 py-2 text-sm font-semibold">
+                                        <div
+                                            class="px-3 py-2 text-sm font-semibold"
+                                        >
                                             {{ item.title }}
                                         </div>
                                         <div class="mt-1 space-y-1">
@@ -344,7 +356,7 @@ const rightNavItems: NavItem[] = [
                             <template v-else>
                                 <Link
                                     :class="[
-                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1',
+                                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50',
                                         activeItemStyles(item.href),
                                     ]"
                                     :href="item.href"
@@ -359,8 +371,7 @@ const rightNavItems: NavItem[] = [
                             </template>
                             <div
                                 v-if="
-                                    !item.children &&
-                                    isCurrentRoute(item.href)
+                                    !item.children && isCurrentRoute(item.href)
                                 "
                                 class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
                             ></div>

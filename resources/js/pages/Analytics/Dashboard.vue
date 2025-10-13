@@ -182,141 +182,311 @@ const formatNumber = (num: number) => {
     }
     return num.toString();
 };
+
+const setQuickDate = (period: string) => {
+    const end = new Date();
+    const start = new Date();
+
+    switch (period) {
+        case '7d':
+            start.setDate(end.getDate() - 7);
+            break;
+        case '30d':
+            start.setDate(end.getDate() - 30);
+            break;
+        case '90d':
+            start.setDate(end.getDate() - 90);
+            break;
+        case '1y':
+            start.setFullYear(end.getFullYear() - 1);
+            break;
+    }
+
+    dateRange.value.start = start.toISOString().split('T')[0];
+    dateRange.value.end = end.toISOString().split('T')[0];
+    applyFilters();
+};
 </script>
 
 <template>
     <Head title="Analytics Dashboard" />
 
     <AppLayout layout="sidebar">
-        <div class="flex h-full flex-1 flex-col space-y-6 p-6">
-            <div class="flex items-center justify-between">
+        <div class="flex h-full flex-1 flex-col space-y-8 p-6">
+            <!-- Enhanced Header -->
+            <div
+                class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
+            >
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight">
-                        Analytics Dashboard
+                    <h1
+                        class="text-display-2 mb-2 text-neutral-900 dark:text-white"
+                    >
+                        Analytics
+                        <span class="text-gradient">Dashboard</span> 📊
                     </h1>
-                    <p class="text-muted-foreground">
+                    <p
+                        class="text-body-large text-neutral-600 dark:text-neutral-400"
+                    >
                         Track your social media performance and engagement
+                        across all platforms
                     </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-3">
                     <Button
                         @click="showFilters = !showFilters"
                         variant="outline"
+                        class="btn-secondary"
                     >
                         <Filter class="mr-2 h-4 w-4" />
-                        Filters
+                        {{ showFilters ? 'Hide' : 'Show' }} Filters
                     </Button>
-                    <Button @click="exportData" variant="outline">
+                    <Button
+                        @click="exportData"
+                        variant="outline"
+                        class="btn-secondary"
+                    >
                         <Download class="mr-2 h-4 w-4" />
-                        Export
+                        Export Data
                     </Button>
                 </div>
             </div>
 
-            <!-- Date Filters -->
-            <Card v-if="showFilters" class="mb-6">
-                <CardHeader>
-                    <CardTitle class="text-lg">Date Range</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div class="flex items-end gap-4">
-                        <div class="flex-1">
-                            <label class="text-sm font-medium"
-                                >Start Date</label
-                            >
-                            <input
-                                v-model="dateRange.start"
-                                type="date"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                            />
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-sm font-medium">End Date</label>
-                            <input
-                                v-model="dateRange.end"
-                                type="date"
-                                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                            />
-                        </div>
-                        <Button @click="applyFilters" :disabled="loading">
+            <!-- Enhanced Date Filters -->
+            <div
+                v-if="showFilters"
+                class="rounded-xl border bg-card text-card-foreground shadow-sm"
+            >
+                <div class="mb-6">
+                    <h2
+                        class="text-headline-3 mb-2 text-neutral-900 dark:text-white"
+                    >
+                        Date Range
+                    </h2>
+                    <p class="text-body text-neutral-600 dark:text-neutral-400">
+                        Select the time period for your analytics data
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div>
+                        <label
+                            class="text-body mb-2 block font-medium text-neutral-700 dark:text-neutral-300"
+                            >Start Date</label
+                        >
+                        <input
+                            v-model="dateRange.start"
+                            type="date"
+                            class="input-field w-full"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="text-body mb-2 block font-medium text-neutral-700 dark:text-neutral-300"
+                            >End Date</label
+                        >
+                        <input
+                            v-model="dateRange.end"
+                            type="date"
+                            class="input-field w-full"
+                        />
+                    </div>
+                    <div class="flex items-end">
+                        <Button
+                            @click="applyFilters"
+                            :disabled="loading"
+                            class="btn-primary w-full"
+                        >
                             <Calendar class="mr-2 h-4 w-4" />
-                            Apply
+                            Apply Filters
                         </Button>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
 
-            <!-- Overview Cards -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader
-                        class="flex flex-row items-center justify-between space-y-0 pb-2"
+                <!-- Quick Date Options -->
+                <div
+                    class="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-700"
+                >
+                    <p
+                        class="text-body-small mb-3 text-neutral-600 dark:text-neutral-400"
                     >
-                        <CardTitle class="text-sm font-medium"
-                            >Total Posts</CardTitle
+                        Quick select:
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="setQuickDate('7d')"
+                            class="text-xs"
                         >
-                        <TrendingUp class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ analytics.total_posts }}
+                            Last 7 days
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="setQuickDate('30d')"
+                            class="text-xs"
+                        >
+                            Last 30 days
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="setQuickDate('90d')"
+                            class="text-xs"
+                        >
+                            Last 90 days
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="setQuickDate('1y')"
+                            class="text-xs"
+                        >
+                            Last year
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Overview Cards -->
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <!-- Total Posts Card -->
+                <div
+                    class="hover-lift group rounded-xl border bg-card text-card-foreground shadow-sm"
+                >
+                    <div class="mb-4 flex items-center justify-between">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 transition-transform group-hover:scale-110 dark:bg-blue-900/30"
+                        >
+                            <FileText
+                                class="h-6 w-6 text-blue-600 dark:text-blue-400"
+                            />
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ analytics.published_posts }} published,
-                            {{ analytics.scheduled_posts }} scheduled
+                        <div
+                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
+                        >
+                            <TrendingUp class="h-4 w-4" />
+                            <span class="text-xs font-medium">+15%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3
+                            class="text-2xl font-bold text-neutral-900 dark:text-white"
+                        >
+                            {{ analytics.total_posts || 0 }}
+                        </h3>
+                        <p
+                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+                        >
+                            Total Posts
                         </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader
-                        class="flex flex-row items-center justify-between space-y-0 pb-2"
-                    >
-                        <CardTitle class="text-sm font-medium"
-                            >Total Engagement</CardTitle
+                        <p
+                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
                         >
-                        <Heart class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatNumber(analytics.total_engagement) }}
+                            {{ analytics.published_posts || 0 }} published,
+                            {{ analytics.scheduled_posts || 0 }} scheduled
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Total Engagement Card -->
+                <div
+                    class="hover-lift group rounded-xl border bg-card text-card-foreground shadow-sm"
+                >
+                    <div class="mb-4 flex items-center justify-between">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-100 transition-transform group-hover:scale-110 dark:bg-pink-900/30"
+                        >
+                            <Heart
+                                class="h-6 w-6 text-pink-600 dark:text-pink-400"
+                            />
                         </div>
-                        <p class="text-xs text-muted-foreground">
+                        <div
+                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
+                        >
+                            <TrendingUp class="h-4 w-4" />
+                            <span class="text-xs font-medium">+28%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3
+                            class="text-2xl font-bold text-neutral-900 dark:text-white"
+                        >
+                            {{ formatNumber(analytics.total_engagement || 0) }}
+                        </h3>
+                        <p
+                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+                        >
+                            Total Engagement
+                        </p>
+                        <p
+                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                        >
                             Likes, comments, and shares
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card>
-                    <CardHeader
-                        class="flex flex-row items-center justify-between space-y-0 pb-2"
-                    >
-                        <CardTitle class="text-sm font-medium"
-                            >Total Reach</CardTitle
+                <!-- Total Reach Card -->
+                <div
+                    class="hover-lift group rounded-xl border bg-card text-card-foreground shadow-sm"
+                >
+                    <div class="mb-4 flex items-center justify-between">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 transition-transform group-hover:scale-110 dark:bg-purple-900/30"
                         >
-                        <Eye class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatNumber(analytics.total_reach) }}
+                            <Eye
+                                class="h-6 w-6 text-purple-600 dark:text-purple-400"
+                            />
                         </div>
-                        <p class="text-xs text-muted-foreground">
+                        <div
+                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
+                        >
+                            <TrendingUp class="h-4 w-4" />
+                            <span class="text-xs font-medium">+42%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3
+                            class="text-2xl font-bold text-neutral-900 dark:text-white"
+                        >
+                            {{ formatNumber(analytics.total_reach || 0) }}
+                        </h3>
+                        <p
+                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+                        >
+                            Total Reach
+                        </p>
+                        <p
+                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                        >
                             Unique users reached
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card>
-                    <CardHeader
-                        class="flex flex-row items-center justify-between space-y-0 pb-2"
-                    >
-                        <CardTitle class="text-sm font-medium"
-                            >Engagement Rate</CardTitle
+                <!-- Engagement Rate Card -->
+                <div
+                    class="hover-lift group rounded-xl border bg-card text-card-foreground shadow-sm"
+                >
+                    <div class="mb-4 flex items-center justify-between">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 transition-transform group-hover:scale-110 dark:bg-green-900/30"
                         >
-                        <TrendingUp class="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
+                            <TrendingUp
+                                class="h-6 w-6 text-green-600 dark:text-green-400"
+                            />
+                        </div>
+                        <div
+                            class="flex items-center gap-1 text-green-600 dark:text-green-400"
+                        >
+                            <TrendingUp class="h-4 w-4" />
+                            <span class="text-xs font-medium">+8%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3
+                            class="text-2xl font-bold text-neutral-900 dark:text-white"
+                        >
                             {{
                                 analytics.total_reach > 0
                                     ? (
@@ -326,12 +496,19 @@ const formatNumber = (num: number) => {
                                       ).toFixed(2)
                                     : '0'
                             }}%
-                        </div>
-                        <p class="text-xs text-muted-foreground">
+                        </h3>
+                        <p
+                            class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+                        >
+                            Engagement Rate
+                        </p>
+                        <p
+                            class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                        >
                             Average engagement rate
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <!-- Best Performing Post -->

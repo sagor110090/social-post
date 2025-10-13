@@ -1,5 +1,4 @@
-<script setup>
-import AppLayout from '@/layouts/AppLayout.vue';
+<script setup lang="ts">
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import {
     CheckCircleIcon,
