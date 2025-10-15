@@ -10,6 +10,8 @@ use App\Services\Social\SocialPostService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class SocialPostController extends Controller
 {
@@ -28,6 +30,8 @@ class SocialPostController extends Controller
             'content' => 'required|string',
             'platforms' => 'required|array|min:1',
             'platforms.*' => 'string|in:facebook,instagram,linkedin,twitter',
+            'hashtags' => 'nullable|array',
+            'hashtags.*' => 'string',
             'link' => 'nullable|url',
             'image_url' => 'nullable|url',
             'media_urls' => 'nullable|array',
@@ -44,23 +48,39 @@ class SocialPostController extends Controller
         $missingPlatforms = array_diff($requestedPlatforms, $availablePlatforms);
         
         if (!empty($missingPlatforms)) {
-            return response()->json([
-                'error' => 'Missing connected accounts for platforms: ' . implode(', ', $missingPlatforms)
-            ], 400);
+            $errorMessage = 'Missing connected accounts for platforms: ' . implode(', ', $missingPlatforms);
+            
+            // Check if this is an Inertia request (not an API request)
+            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+                return redirect()->back()->with('error', $errorMessage);
+            }
+            
+            // Return JSON for API requests
+            return response()->json(['error' => $errorMessage], 400);
         }
 
         // Validate content for each platform
         $validationErrors = [];
         foreach ($requestedPlatforms as $platform) {
-            $validation = $this->socialPostService->validateContent($request->content, $platform);
+            $validation = $this->socialPostService->validateContent($request->content, $platform, $request->hashtags ?? []);
             if (!$validation['valid']) {
                 $validationErrors[$platform] = $validation['errors'];
             }
         }
 
         if (!empty($validationErrors)) {
+            $errorMessage = 'Content validation failed for some platforms';
+            
+            // Check if this is an Inertia request (not an API request)
+            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+                return redirect()->back()
+                    ->with('error', $errorMessage)
+                    ->with('validation_errors', $validationErrors);
+            }
+            
+            // Return JSON for API requests
             return response()->json([
-                'error' => 'Content validation failed',
+                'error' => $errorMessage,
                 'validation_errors' => $validationErrors
             ], 400);
         }
@@ -69,6 +89,7 @@ class SocialPostController extends Controller
         $post = Post::create([
             'user_id' => $user->id,
             'content' => $request->content,
+            'hashtags' => $request->hashtags,
             'link' => $request->link,
             'image_url' => $request->image_url,
             'media_urls' => $request->media_urls,
@@ -82,22 +103,36 @@ class SocialPostController extends Controller
                 $scheduledAt = Carbon::parse($request->schedule_at);
                 $scheduledPost = $this->scheduledPostService->schedulePost($post, $requestedPlatforms, $scheduledAt);
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Post scheduled successfully',
-                    'post' => $post->load('scheduledPost'),
-                    'scheduled_post' => [
-                        'id' => $scheduledPost->id,
-                        'scheduled_at' => $scheduledPost->scheduled_at->toISOString(),
-                        'scheduled_at_for_humans' => $scheduledPost->getScheduledAtForHumans(),
-                        'time_until' => $scheduledPost->getTimeUntilPublication(),
-                    ]
-                ]);
+                $successMessage = 'Post scheduled successfully for ' . $scheduledAt->format('M j, Y \a\t g:i A');
+            
+            // Check if this is an Inertia request (not an API request)
+            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+                return redirect()->route('social.posts.history')->with('success', $successMessage);
+            }
+            
+            // Return JSON for API requests
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage,
+                'post' => $post->load('scheduledPost'),
+                'scheduled_post' => [
+                    'id' => $scheduledPost->id,
+                    'scheduled_at' => $scheduledPost->scheduled_at->toISOString(),
+                    'scheduled_at_for_humans' => $scheduledPost->getScheduledAtForHumans(),
+                    'time_until' => $scheduledPost->getTimeUntilPublication(),
+                ]
+            ]);
 
             } catch (\Exception $e) {
-                return response()->json([
-                    'error' => 'Failed to schedule post: ' . $e->getMessage()
-                ], 400);
+                $errorMessage = 'Failed to schedule post: ' . $e->getMessage();
+                
+// Check if this is an Inertia request (not an API request)
+            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+                    return redirect()->back()->with('error', $errorMessage);
+                }
+                
+                // Return JSON for API requests
+                return response()->json(['error' => $errorMessage], 400);
             }
         }
 
@@ -130,9 +165,19 @@ class SocialPostController extends Controller
 
         $post->update(['platform_results' => $platformResults]);
 
+        $message = $allSuccessful ? 'Post published successfully!' : 'Post published with some errors';
+        
+        // Check if this is an Inertia request (not an API request)
+        if ($request->header('X-Inertia') && !$request->wantsJson()) {
+            return redirect()->route('social.posts.history')
+                ->with('success', $message)
+                ->with('results', $results);
+        }
+        
+        // Return JSON for API requests
         return response()->json([
             'success' => true,
-            'message' => $allSuccessful ? 'Post published successfully' : 'Post published with some errors',
+            'message' => $message,
             'post' => $post->fresh(),
             'results' => $results
         ]);
@@ -245,6 +290,9 @@ class SocialPostController extends Controller
     public function delete(Request $request, Post $post)
     {
         if ($post->user_id !== Auth::id()) {
+            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+                return redirect()->back()->with('error', 'Unauthorized');
+            }
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -255,9 +303,17 @@ class SocialPostController extends Controller
 
         $post->delete();
 
+        $successMessage = 'Post deleted successfully';
+
+        // Check if this is an Inertia request (not an API request)
+        if ($request->header('X-Inertia') && !$request->wantsJson()) {
+            return redirect()->route('social.posts.history')->with('success', $successMessage);
+        }
+        
+        // Return JSON for API requests
         return response()->json([
             'success' => true,
-            'message' => 'Post deleted successfully'
+            'message' => $successMessage
         ]);
     }
 

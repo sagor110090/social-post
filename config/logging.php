@@ -127,6 +127,70 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Webhook Logging Channels
+        |--------------------------------------------------------------------------
+        |
+        | Specialized logging channels for webhook events, processing, security,
+        | performance monitoring, and error tracking.
+        |
+        */
+
+        'webhook-events' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/events.log'),
+            'level' => env('WEBHOOK_EVENTS_LOG_LEVEL', 'info'),
+            'days' => env('WEBHOOK_EVENTS_LOG_DAYS', 30),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
+        'webhook-processing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/processing.log'),
+            'level' => env('WEBHOOK_PROCESSING_LOG_LEVEL', 'info'),
+            'days' => env('WEBHOOK_PROCESSING_LOG_DAYS', 30),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
+        'webhook-security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/security.log'),
+            'level' => env('WEBHOOK_SECURITY_LOG_LEVEL', 'warning'),
+            'days' => env('WEBHOOK_SECURITY_LOG_DAYS', 90),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
+        'webhook-performance' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/performance.log'),
+            'level' => env('WEBHOOK_PERFORMANCE_LOG_LEVEL', 'info'),
+            'days' => env('WEBHOOK_PERFORMANCE_LOG_DAYS', 14),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
+        'webhook-errors' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/errors.log'),
+            'level' => env('WEBHOOK_ERRORS_LOG_LEVEL', 'error'),
+            'days' => env('WEBHOOK_ERRORS_LOG_DAYS', 60),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
+        'webhook-metrics' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks/metrics.log'),
+            'level' => env('WEBHOOK_METRICS_LOG_LEVEL', 'info'),
+            'days' => env('WEBHOOK_METRICS_LOG_DAYS', 7),
+            'replace_placeholders' => true,
+            'formatter' => \App\Logging\WebhookJsonFormatter::class,
+        ],
+
     ],
 
 ];

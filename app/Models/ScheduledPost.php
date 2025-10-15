@@ -43,6 +43,11 @@ class ScheduledPost extends Model
         return $this->hasMany(PostAnalytics::class);
     }
 
+    public function webhookEventProcessing(): HasMany
+    {
+        return $this->hasMany(WebhookEventProcessing::class);
+    }
+
     public function isPending(): bool
     {
         return $this->status === 'pending';

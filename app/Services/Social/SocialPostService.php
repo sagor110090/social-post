@@ -5,11 +5,16 @@ namespace App\Services\Social;
 use App\Models\Post;
 use App\Models\SocialAccount;
 use App\Models\User;
+use App\Services\Social\ContentFormatterService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SocialPostService
 {
+    public function __construct(
+        private ContentFormatterService $contentFormatter
+    ) {}
+
     /**
      * Post content to multiple social media platforms.
      */
@@ -20,7 +25,7 @@ class SocialPostService
 
         foreach ($platforms as $platform) {
             $account = $user->socialAccounts()
-                ->where('provider', $platform)
+                ->where('platform', $platform)
                 ->where('is_active', true)
                 ->first();
 
@@ -36,7 +41,13 @@ class SocialPostService
                 $result = $this->postToPlatform($post, $account);
                 $results[$platform] = $result;
             } catch (\Exception $e) {
-                Log::error("Failed to post to {$platform}: " . $e->getMessage());
+                Log::error("Failed to post to {$platform}: " . $e->getMessage(), [
+                    'post_id' => $post->id,
+                    'account_id' => $account->id,
+                    'platform' => $platform,
+                    'content_length' => strlen($post->content),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 $results[$platform] = [
                     'success' => false,
                     'error' => $e->getMessage()
@@ -62,22 +73,44 @@ class SocialPostService
     }
 
     /**
+     * Get content with hashtags appended, formatted for specific platform.
+     */
+    private function getContentWithHashtags(Post $post, string $platform): string
+    {
+        // Format the main content for the platform
+        $content = $this->contentFormatter->formatForPlatform($post->content, $platform);
+        
+        // Add formatted hashtags
+        if (!empty($post->hashtags) && is_array($post->hashtags)) {
+            $hashtags = $this->contentFormatter->formatHashtags($post->hashtags, $platform);
+            if (!empty($hashtags)) {
+                $content .= "\n\n" . $hashtags;
+            }
+        }
+        
+        return $content;
+    }
+
+    /**
      * Post to Facebook.
      */
     private function postToFacebook(Post $post, SocialAccount $account): array
     {
         $pages = $account->additional_data['pages'] ?? [];
+        $userAccessToken = is_array($account->access_token) 
+            ? $account->access_token['access_token'] 
+            : $account->access_token;
+
+        $message = $this->getContentWithHashtags($post, 'facebook');
         
-        if (empty($pages)) {
-            return ['success' => false, 'error' => 'No Facebook pages available'];
-        }
-
-        // Use the first page for now (can be enhanced to let user choose)
-        $page = $pages[0];
-        $pageAccessToken = $page['access_token'];
-
+        // Ensure UTF-8 encoding for Facebook API
+        $message = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
+        
+        // Remove any invalid UTF-8 sequences
+        $message = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $message);
+        
         $postData = [
-            'message' => $post->content,
+            'message' => $message,
             'published' => true,
         ];
 
@@ -99,14 +132,32 @@ class SocialPostService
             // and then use the attached_media parameter
         }
 
-        $response = Http::post("https://graph.facebook.com/v18.0/{$page['id']}/feed", $postData + [
-            'access_token' => $pageAccessToken
-        ]);
+        // Try to post to a page first, fallback to user timeline
+        if (!empty($pages)) {
+            $page = $pages[0];
+            $pageAccessToken = $page['access_token'];
+            
+            $response = Http::post("https://graph.facebook.com/v18.0/{$page['id']}/feed", $postData + [
+                'access_token' => $pageAccessToken
+            ]);
+        } else {
+            // Post to user's timeline instead
+            $response = Http::post("https://graph.facebook.com/v18.0/me/feed", $postData + [
+                'access_token' => $userAccessToken
+            ]);
+        }
 
         $result = $response->json();
 
         if ($response->failed() || !isset($result['id'])) {
-            return ['success' => false, 'error' => 'Failed to create Facebook post'];
+            $errorMessage = $result['error']['message'] ?? 'Failed to create Facebook post';
+            Log::error('Facebook posting error', [
+                'error' => $result,
+                'post_id' => $post->id,
+                'account_id' => $account->id,
+                'response_status' => $response->status()
+            ]);
+            return ['success' => false, 'error' => $errorMessage];
         }
 
         return [
@@ -144,7 +195,7 @@ class SocialPostService
 
         // Need Facebook account for Instagram posting
         $facebookAccount = $account->user->socialAccounts()
-            ->where('provider', 'facebook')
+            ->where('platform', 'facebook')
             ->first();
 
         if (!$facebookAccount) {
@@ -157,7 +208,7 @@ class SocialPostService
         
         $containerResponse = Http::post("https://graph.facebook.com/v18.0/{$accountId}/media", [
             'image_url' => $imageUrl,
-            'caption' => $post->content,
+            'caption' => $this->getContentWithHashtags($post, 'instagram'),
             'media_type' => $mediaType,
             'access_token' => $facebookAccount->access_token
         ]);
@@ -210,7 +261,7 @@ class SocialPostService
             'specificContent' => [
                 'com.linkedin.ugc.ShareContent' => [
                     'shareCommentary' => [
-                        'text' => $post->content
+                        'text' => $this->getContentWithHashtags($post, 'linkedin')
                     ],
                     'shareMediaCategory' => $post->image_url ? 'IMAGE' : 'NONE'
                 ]
@@ -250,7 +301,7 @@ class SocialPostService
     private function postToTwitter(Post $post, SocialAccount $account): array
     {
         $tweetData = [
-            'text' => $post->content
+            'text' => $this->getContentWithHashtags($post, 'twitter')
         ];
 
         // Handle media if present
@@ -292,14 +343,23 @@ class SocialPostService
     /**
      * Validate content for platform.
      */
-    public function validateContent(string $content, string $platform): array
+    public function validateContent(string $content, string $platform, array $hashtags = []): array
     {
         $limits = $this->getCharacterLimits();
         $limit = $limits[$platform] ?? 280;
 
+        // Build full content with hashtags for validation using platform-specific formatting
+        $fullContent = $this->contentFormatter->formatForPlatform($content, $platform);
+        if (!empty($hashtags)) {
+            $hashtagString = $this->contentFormatter->formatHashtags($hashtags, $platform);
+            if (!empty($hashtagString)) {
+                $fullContent .= "\n\n" . $hashtagString;
+            }
+        }
+
         $errors = [];
 
-        if (strlen($content) > $limit) {
+        if (strlen($fullContent) > $limit) {
             $errors[] = "Content exceeds {$limit} character limit for {$platform}";
         }
 
@@ -310,7 +370,7 @@ class SocialPostService
         return [
             'valid' => empty($errors),
             'errors' => $errors,
-            'character_count' => strlen($content),
+            'character_count' => strlen($fullContent),
             'character_limit' => $limit,
         ];
     }
@@ -322,7 +382,7 @@ class SocialPostService
     {
         return $user->socialAccounts()
             ->where('is_active', true)
-            ->pluck('provider')
+            ->pluck('platform')
             ->toArray();
     }
 }

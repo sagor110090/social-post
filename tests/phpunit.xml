@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         executionOrder="random"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnEmptyTestSuite="true"
+         beStrictAboutOutputDuringTests="true"
+         verbose="true"
+         cacheDirectory=".phpunit.cache"
+         backupGlobals="false"
+         backupStaticAttributes="false">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory suffix="Test.php">./tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Webhook">
+            <directory suffix="Test.php">./tests/Unit/Models</directory>
+            <directory suffix="Test.php">./tests/Unit/Services</directory>
+            <directory suffix="Test.php">./tests/Unit/Jobs</directory>
+            <directory suffix="Test.php">./tests/Feature/Webhooks</directory>
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./app</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">./app/Console/Commands</directory>
+            <directory suffix=".php">./app/Exceptions</directory>
+            <directory suffix=".php">./app/Providers</directory>
+            <file>./app/Http/Kernel.php</file>
+            <file>./app/Http/Middleware/TrustProxies.php</file>
+        </exclude>
+        <report>
+            <html outputDirectory="build/coverage"/>
+            <text outputFile="build/coverage.txt"/>
+            <clover outputFile="build/logs/clover.xml"/>
+        </report>
+        <threshold min="80"/>
+    </coverage>
+    <logging>
+        <junit outputFile="build/report.junit.xml"/>
+        <teamcity outputFile="build/teamcity.txt"/>
+    </logging>
+    <php>
+        <server name="APP_ENV" value="testing"/>
+        <server name="BCRYPT_ROUNDS" value="4"/>
+        <server name="CACHE_DRIVER" value="array"/>
+        <server name="DB_CONNECTION" value="mysql"/>
+        <server name="DB_DATABASE" value="social_post_testing"/>
+        <server name="MAIL_MAILER" value="array"/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <server name="TELESCOPE_ENABLED" value="false"/>
+        <server name="LOG_CHANNEL" value="single"/>
+        
+        <!-- Webhook Test Configuration -->
+        <env name="WEBHOOK_SIGNATURE_TOLERANCE" value="300"/>
+        <env name="WEBHOOK_REPLAY_PROTECTION" value="true"/>
+        <env name="WEBHOOK_REPLAY_WINDOW" value="300"/>
+        <env name="WEBHOOK_MAX_PAYLOAD_SIZE" value="1048576"/>
+        <env name="WEBHOOK_TIMEOUT" value="30"/>
+        <env name="WEBHOOK_RATE_LIMIT" value="60"/>
+        <env name="WEBHOOK_RATE_WINDOW" value="60"/>
+    </php>
+    <groups>
+        <exclude>
+            <group>integration</group>
+            <group>performance</group>
+        </exclude>
+    </groups>
+</phpunit>

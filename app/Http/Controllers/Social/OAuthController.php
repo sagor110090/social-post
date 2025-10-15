@@ -252,6 +252,28 @@ class OAuthController extends Controller
         // Handle different token formats for different providers
         switch ($provider) {
             case 'facebook':
+                if ($socialUser->expiresIn) {
+                    $tokens['expires_at'] = now()->addSeconds($socialUser->expiresIn);
+                }
+                $tokens['additional_data'] = [
+                    'token_type' => $socialUser->tokenType ?? 'Bearer',
+                ];
+                
+                // Fetch Facebook pages
+                try {
+                    $pagesResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/me/accounts", [
+                        'access_token' => $socialUser->token
+                    ]);
+                    
+                    if ($pagesResponse->successful()) {
+                        $pagesData = $pagesResponse->json();
+                        $tokens['additional_data']['pages'] = $pagesData['data'] ?? [];
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to fetch Facebook pages: ' . $e->getMessage());
+                }
+                break;
+                
             case 'instagram':
                 if ($socialUser->expiresIn) {
                     $tokens['expires_at'] = now()->addSeconds($socialUser->expiresIn);

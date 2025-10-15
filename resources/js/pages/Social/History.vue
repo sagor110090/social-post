@@ -1,8 +1,6 @@
 <script setup>
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -11,7 +9,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Head, router } from '@inertiajs/vue3';
+import { useToast } from '@/composables/useToast';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     AlertCircleIcon,
     CalendarIcon,
@@ -24,11 +24,12 @@ import {
     TrashIcon,
     XCircleIcon,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
     posts: Object,
     filters: Object,
+    flash: Object,
 });
 
 const loading = ref(false);
@@ -45,6 +46,9 @@ const filters = ref({
 
 const posts = ref(props.posts?.posts || []);
 const pagination = ref(props.posts?.pagination || {});
+
+const toast = useToast();
+const page = usePage();
 
 const statusOptions = [
     { value: '', label: 'All Status' },
@@ -72,9 +76,12 @@ const platformIcons = {
 
 const statusColors = {
     draft: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200',
-    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    partially_published: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    scheduled:
+        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    published:
+        'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    partially_published:
+        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
     failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
@@ -132,7 +139,7 @@ const deletePost = () => {
 
     deleting.value = true;
 
-    router.delete(`/social/posts/${selectedPost.value.id}`, {
+    router.delete(`/posts/${selectedPost.value.id}`, {
         onSuccess: () => {
             posts.value = posts.value.filter(
                 (p) => p.id !== selectedPost.value.id,
@@ -160,18 +167,46 @@ const truncateText = (text, maxLength = 100) => {
 };
 
 const getPlatformResults = (post) => {
-    return post.platform_results || {};
+    const results = post.platform_results;
+    if (!results || typeof results !== 'object' || Array.isArray(results)) {
+        return {};
+    }
+    return results;
 };
 
 const hasSuccessfulPost = (post) => {
-    return Object.values(getPlatformResults(post)).some((result) => result.url);
+    return Object.values(getPlatformResults(post)).some(
+        (result) => result && result.url,
+    );
 };
 
 onMounted(() => {
+    // Show flash messages as toast notifications
+    if (props.flash?.success) {
+        toast.success(props.flash.success);
+    }
+    if (props.flash?.error) {
+        toast.error(props.flash.error);
+    }
+
     if (!posts.value.length) {
         loadPosts();
     }
 });
+
+// Watch for flash message changes (for redirects)
+watch(
+    () => page.props.flash,
+    (flash) => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -182,14 +217,21 @@ onMounted(() => {
             <div class="p-6">
                 <div class="mx-auto max-w-7xl">
                     <!-- Header -->
-                    <div class="mb-12 animate-fade-in">
-                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
-                            Post <span class="text-gradient font-bold">History</span> 📝
+                    <div class="animate-fade-in mb-12">
+                        <h1
+                            class="text-display-1 mb-4 text-neutral-900 dark:text-white"
+                        >
+                            Post
+                            <span class="text-gradient font-bold">History</span>
+                            📝
                         </h1>
-                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                            View and manage your published and scheduled posts across all platforms.
+                        <p
+                            class="text-body-large max-w-3xl leading-relaxed text-neutral-600 dark:text-neutral-400"
+                        >
+                            View and manage your published and scheduled posts
+                            across all platforms.
                         </p>
-                        <div class="flex gap-4 mt-6">
+                        <div class="mt-6 flex gap-4">
                             <Button
                                 variant="outline"
                                 class="hover-glow"
@@ -202,30 +244,42 @@ onMounted(() => {
                                 />
                                 Refresh
                             </Button>
-                            <Button
-                                as-child
-                                class="btn-primary hover-glow"
-                            >
-                                <a href="/social/posts/create">Create New Post</a>
+                            <Button as-child class="btn-primary hover-glow">
+                                <a href="/social/posts/create"
+                                    >Create New Post</a
+                                >
                             </Button>
                         </div>
                     </div>
 
                     <!-- Filters -->
-                    <div class="card-elevated relative overflow-hidden mb-12 animate-slide-up">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                    <div
+                        class="card-elevated animate-slide-up relative mb-12 overflow-hidden"
+                    >
+                        <div
+                            class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500"
+                        ></div>
                         <div class="mb-6">
-                            <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white flex items-center gap-3">
+                            <h2
+                                class="text-headline-1 mb-3 flex items-center gap-3 text-neutral-900 dark:text-white"
+                            >
                                 <FilterIcon class="h-6 w-6" />
                                 Filters
                             </h2>
-                            <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                                Filter posts by status, platform, or adjust pagination
+                            <p
+                                class="text-body-large text-neutral-600 dark:text-neutral-400"
+                            >
+                                Filter posts by status, platform, or adjust
+                                pagination
                             </p>
                         </div>
                         <div class="grid gap-6 md:grid-cols-4">
                             <div class="space-y-2">
-                                <Label for="status-filter" class="text-body font-medium">Status</Label>
+                                <Label
+                                    for="status-filter"
+                                    class="text-body font-medium"
+                                    >Status</Label
+                                >
                                 <Select
                                     v-model="filters.status"
                                     @update:modelValue="applyFilters"
@@ -248,7 +302,11 @@ onMounted(() => {
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="platform-filter" class="text-body font-medium">Platform</Label>
+                                <Label
+                                    for="platform-filter"
+                                    class="text-body font-medium"
+                                    >Platform</Label
+                                >
                                 <Select
                                     v-model="filters.platform"
                                     @update:modelValue="applyFilters"
@@ -271,7 +329,9 @@ onMounted(() => {
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="limit" class="text-body font-medium">Posts per page</Label>
+                                <Label for="limit" class="text-body font-medium"
+                                    >Posts per page</Label
+                                >
                                 <Select
                                     v-model="filters.limit"
                                     @update:modelValue="applyFilters"
@@ -314,15 +374,21 @@ onMounted(() => {
                     <div class="space-y-6">
                         <div
                             v-if="filteredPosts.length === 0"
-                            class="card-elevated relative overflow-hidden py-12 text-center animate-slide-up"
+                            class="card-elevated animate-slide-up relative overflow-hidden py-12 text-center"
                         >
-                            <div class="mb-6 text-neutral-400 dark:text-neutral-500">
+                            <div
+                                class="mb-6 text-neutral-400 dark:text-neutral-500"
+                            >
                                 <CalendarIcon class="mx-auto h-16 w-16" />
                             </div>
-                            <h3 class="mb-3 text-headline-2 text-neutral-900 dark:text-white">
+                            <h3
+                                class="text-headline-2 mb-3 text-neutral-900 dark:text-white"
+                            >
                                 No posts found
                             </h3>
-                            <p class="mb-6 text-body-large text-neutral-600 dark:text-neutral-400">
+                            <p
+                                class="text-body-large mb-6 text-neutral-600 dark:text-neutral-400"
+                            >
                                 {{
                                     filters.status || filters.platform
                                         ? 'Try adjusting your filters'
@@ -341,26 +407,46 @@ onMounted(() => {
                         <div
                             v-for="post in filteredPosts"
                             :key="post.id"
-                            class="card-elevated relative overflow-hidden group hover:scale-[1.01] transition-all duration-300 animate-slide-up"
+                            class="card-elevated group animate-slide-up relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
                         >
-                            <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                 :class="post.status === 'published' ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                                        post.status === 'scheduled' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' :
-                                        post.status === 'failed' ? 'bg-gradient-to-r from-red-500 to-pink-500' :
-                                        'bg-gradient-to-r from-gray-500 to-gray-600'"></div>
+                            <div
+                                class="absolute top-0 left-0 h-1 w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                :class="
+                                    post.status === 'published'
+                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                                        : post.status === 'scheduled'
+                                          ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                                          : post.status === 'failed'
+                                            ? 'bg-gradient-to-r from-red-500 to-pink-500'
+                                            : 'bg-gradient-to-r from-gray-500 to-gray-600'
+                                "
+                            ></div>
                             <div class="p-6">
-                                <div class="mb-4 flex items-start justify-between">
+                                <div
+                                    class="mb-4 flex items-start justify-between"
+                                >
                                     <div class="flex-1">
-                                        <div class="mb-3 flex items-center gap-3">
+                                        <div
+                                            class="mb-3 flex items-center gap-3"
+                                        >
                                             <Badge
-                                                :class="statusColors[post.status]"
+                                                :class="
+                                                    statusColors[post.status]
+                                                "
                                                 class="flex items-center gap-2 px-3 py-1"
                                             >
                                                 <component
-                                                    :is="statusIcons[post.status]"
+                                                    :is="
+                                                        statusIcons[post.status]
+                                                    "
                                                     class="h-4 w-4"
                                                 />
-                                                {{ post.status.replace('_', ' ') }}
+                                                {{
+                                                    post.status.replace(
+                                                        '_',
+                                                        ' ',
+                                                    )
+                                                }}
                                             </Badge>
 
                                             <div class="flex gap-2">
@@ -369,26 +455,32 @@ onMounted(() => {
                                                     :key="platform"
                                                     class="text-xl"
                                                 >
-                                                    {{ platformIcons[platform] }}
+                                                    {{
+                                                        platformIcons[platform]
+                                                    }}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <p
-                                            class="mb-3 whitespace-pre-wrap text-body-large text-neutral-900 dark:text-neutral-100 leading-relaxed"
+                                            class="text-body-large mb-3 leading-relaxed whitespace-pre-wrap text-neutral-900 dark:text-neutral-100"
                                         >
-                                            {{ truncateText(post.content, 200) }}
+                                            {{
+                                                truncateText(post.content, 200)
+                                            }}
                                         </p>
 
                                         <div
                                             v-if="post.link || post.image_url"
-                                            class="mb-3 flex gap-6 text-body text-neutral-600 dark:text-neutral-400"
+                                            class="text-body mb-3 flex gap-6 text-neutral-600 dark:text-neutral-400"
                                         >
                                             <span
                                                 v-if="post.link"
                                                 class="flex items-center gap-2"
                                             >
-                                                <ExternalLinkIcon class="h-4 w-4" />
+                                                <ExternalLinkIcon
+                                                    class="h-4 w-4"
+                                                />
                                                 Link included
                                             </span>
                                             <span
@@ -400,13 +492,21 @@ onMounted(() => {
                                             </span>
                                         </div>
 
-                                        <div class="text-body text-neutral-500 dark:text-neutral-400">
-                                            Created {{ formatDate(post.created_at) }}
+                                        <div
+                                            class="text-body text-neutral-500 dark:text-neutral-400"
+                                        >
+                                            Created
+                                            {{ formatDate(post.created_at) }}
                                             <span
                                                 v-if="post.scheduled_at"
                                                 class="ml-2"
                                             >
-                                                • Scheduled for {{ formatDateTime(post.scheduled_at) }}
+                                                • Scheduled for
+                                                {{
+                                                    formatDateTime(
+                                                        post.scheduled_at,
+                                                    )
+                                                }}
                                             </span>
                                         </div>
                                     </div>
@@ -418,14 +518,16 @@ onMounted(() => {
                                             class="hover-glow"
                                             as-child
                                         >
-                                            <a :href="`/social/posts/${post.id}`">
+                                            <a
+                                                :href="`/social/posts/${post.id}`"
+                                            >
                                                 <EyeIcon class="h-4 w-4" />
                                             </a>
                                         </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            class="hover:border-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            class="hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                                             @click="confirmDelete(post)"
                                             :disabled="deleting"
                                         >
@@ -437,30 +539,41 @@ onMounted(() => {
                                 <!-- Platform Results -->
                                 <div
                                     v-if="hasSuccessfulPost(post)"
-                                    class="border-t border-neutral-200/60 dark:border-neutral-700/60 pt-4"
+                                    class="border-t border-neutral-200/60 pt-4 dark:border-neutral-700/60"
                                 >
                                     <h4
-                                        class="mb-3 text-headline-4 font-medium text-neutral-900 dark:text-white"
+                                        class="text-headline-4 mb-3 font-medium text-neutral-900 dark:text-white"
                                     >
                                         Published Links:
                                     </h4>
                                     <div class="flex flex-wrap gap-3">
-                                        <a
+                                        <template
                                             v-for="(
                                                 result, platform
                                             ) in getPlatformResults(post)"
                                             :key="platform"
-                                            v-if="result.url"
-                                            :href="result.url"
-                                            target="_blank"
-                                            class="inline-flex items-center gap-2 text-body text-blue-600 dark:text-blue-400 hover:underline px-3 py-1 rounded-full border border-blue-200/60 bg-blue-50/80 dark:border-blue-800/60 dark:bg-blue-900/30"
                                         >
-                                            <span class="text-lg">{{
-                                                platformIcons[platform]
-                                            }}</span>
-                                            View on {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
-                                            <ExternalLinkIcon class="h-3 w-3" />
-                                        </a>
+                                            <a
+                                                v-if="result && result.url"
+                                                :href="result.url"
+                                                target="_blank"
+                                                class="text-body inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50/80 px-3 py-1 text-blue-600 hover:underline dark:border-blue-800/60 dark:bg-blue-900/30 dark:text-blue-400"
+                                            >
+                                                <span class="text-lg">{{
+                                                    platformIcons[platform]
+                                                }}</span>
+                                                View on
+                                                {{
+                                                    platform
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                    platform.slice(1)
+                                                }}
+                                                <ExternalLinkIcon
+                                                    class="h-3 w-3"
+                                                />
+                                            </a>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -483,11 +596,18 @@ onMounted(() => {
                     <!-- Pagination Info -->
                     <div
                         v-if="pagination.total > 0"
-                        class="mt-8 text-center text-body text-neutral-600 dark:text-neutral-400"
+                        class="text-body mt-8 text-center text-neutral-600 dark:text-neutral-400"
                     >
-                        Showing {{ Math.min(pagination.offset + 1, pagination.total) }}-{{
-                            Math.min(pagination.offset + pagination.limit, pagination.total)
-                        }} of {{ pagination.total }} posts
+                        Showing
+                        {{
+                            Math.min(pagination.offset + 1, pagination.total)
+                        }}-{{
+                            Math.min(
+                                pagination.offset + pagination.limit,
+                                pagination.total,
+                            )
+                        }}
+                        of {{ pagination.total }} posts
                     </div>
                 </div>
             </div>
@@ -499,13 +619,20 @@ onMounted(() => {
             class="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
         >
             <div class="card-elevated mx-4 w-full max-w-md overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-pink-500"></div>
+                <div
+                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-red-500 to-pink-500"
+                ></div>
                 <div class="p-6">
-                    <h3 class="mb-4 text-headline-2 text-neutral-900 dark:text-white">
+                    <h3
+                        class="text-headline-2 mb-4 text-neutral-900 dark:text-white"
+                    >
                         Delete Post
                     </h3>
-                    <p class="mb-6 text-body-large text-neutral-600 dark:text-neutral-400">
-                        Are you sure you want to delete this post? This action cannot be undone.
+                    <p
+                        class="text-body-large mb-6 text-neutral-600 dark:text-neutral-400"
+                    >
+                        Are you sure you want to delete this post? This action
+                        cannot be undone.
                     </p>
 
                     <div class="flex justify-end gap-3">

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Post extends Model
 {
@@ -47,9 +49,19 @@ class Post extends Model
         return $this->hasMany(ScheduledPost::class);
     }
 
+    public function scheduledPost(): HasOne
+    {
+        return $this->hasOne(ScheduledPost::class)->latest();
+    }
+
     public function analytics(): HasMany
     {
         return $this->hasMany(PostAnalytics::class);
+    }
+
+    public function webhookEventProcessing(): HasMany
+    {
+        return $this->hasMany(WebhookEventProcessing::class);
     }
 
     public function isPublished(): bool
@@ -78,6 +90,32 @@ class Post extends Model
 
     public function getExcerpt(int $length = 100): string
     {
-        return str_limit(strip_tags($this->content), $length);
+        return Str::limit(strip_tags($this->content), $length);
+    }
+
+    /**
+     * Get platform-specific post ID from platform results.
+     */
+    public function getPlatformPostId(string $platform): ?string
+    {
+        return data_get($this->platform_results, "{$platform}.platform_post_id");
+    }
+
+    /**
+     * Find webhook events related to this post.
+     */
+    public function relatedWebhookEvents(): HasMany
+    {
+        return WebhookEvent::where(function ($query) {
+            foreach ($this->platforms ?? [] as $platform) {
+                $platformPostId = $this->getPlatformPostId($platform);
+                if ($platformPostId) {
+                    $query->orWhere(function ($q) use ($platform, $platformPostId) {
+                        $q->where('platform', $platform)
+                          ->where('object_id', $platformPostId);
+                    });
+                }
+            }
+        });
     }
 }

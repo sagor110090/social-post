@@ -1,4 +1,3 @@
-
 @import './design-system.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -167,5 +166,92 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/* Custom Toast Styles */
+.Vue-Toastification__toast {
+    @apply rounded-xl border border-neutral-200/60 bg-white/95 text-neutral-900 shadow-xl backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/95 dark:text-white;
+    font-family: var(--font-sans);
+    min-height: auto;
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+
+.Vue-Toastification__toast-body {
+    @apply flex items-center gap-3 p-4;
+    margin: 0;
+    padding: 1rem;
+}
+
+.Vue-Toastification__toast--success {
+    @apply border-emerald-200/60 bg-emerald-50/95 dark:border-emerald-800/60 dark:bg-emerald-900/20;
+}
+
+.Vue-Toastification__toast--error {
+    @apply border-red-200/60 bg-red-50/95 dark:border-red-800/60 dark:bg-red-900/20;
+}
+
+.Vue-Toastification__toast--warning {
+    @apply border-amber-200/60 bg-amber-50/95 dark:border-amber-800/60 dark:bg-amber-900/20;
+}
+
+.Vue-Toastification__toast--info {
+    @apply border-blue-200/60 bg-blue-50/95 dark:border-blue-800/60 dark:bg-blue-900/20;
+}
+
+.Vue-Toastification__icon {
+    @apply h-5 w-5 flex-shrink-0;
+    margin: 0;
+}
+
+.Vue-Toastification__close-button {
+    @apply ml-3 h-5 w-5 flex-shrink-0 text-neutral-400 opacity-70 transition-colors hover:text-neutral-600 hover:opacity-100 dark:hover:text-neutral-300;
+    margin: 0;
+    padding: 0;
+}
+
+.Vue-Toastification__progress-bar {
+    @apply absolute bottom-0 left-0 h-1 rounded-b-xl;
+    margin: 0;
+    background: linear-gradient(
+        to right,
+        var(--brand-primary),
+        var(--brand-primary-dark)
+    );
+}
+
+.Vue-Toastification__container {
+    @apply p-4;
+}
+
+/* Animation improvements */
+.Vue-Toastification__toast--default {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.Vue-Toastification__toast--default.Vue-Toastification__toast--closing {
+    animation: slideOutRight 0.3s ease-in;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     }
 }

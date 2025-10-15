@@ -27,6 +27,10 @@ const sidebarNavItems: NavItem[] = [
         title: 'Appearance',
         href: editAppearance(),
     },
+    {
+        title: 'Webhooks',
+        href: '/settings/webhooks',
+    },
 ];
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';

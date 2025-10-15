@@ -7,11 +7,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/composables/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
-import { AlertCircle, CheckCircle, PlusCircle, Clock, Eye, Send } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { AlertCircle, CheckCircle, PlusCircle } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
 
 // Type definitions
 interface Platform {
@@ -76,6 +76,7 @@ const isPublishing = ref(false);
 const validationErrors = ref({});
 const characterCounts = ref({});
 const showPreview = ref(false);
+const toast = useToast();
 
 const selectedPlatforms = computed(() => {
     return (
@@ -125,22 +126,31 @@ const validateContent = () => {
         return;
     }
 
-    router.post(
-        '/social/posts/validate',
-        {
+    // Use fetch instead of Inertia for validation
+    fetch('/posts/validate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN':
+                document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute('content') || '',
+        },
+        body: JSON.stringify({
             content: form.value.content,
             platforms: form.value.platforms,
-        },
-        {
-            onSuccess: (response) => {
-                validationErrors.value = {};
-                characterCounts.value = response.props.validation_results || {};
-            },
-            onError: (errors) => {
-                validationErrors.value = errors;
-            },
-        },
-    );
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            validationErrors.value = {};
+            characterCounts.value = data;
+        })
+        .catch((error) => {
+            console.error('Validation error:', error);
+            toast.error('Failed to validate content');
+        });
 };
 
 const handleMediaUploadSuccess = (response: MediaFile) => {
@@ -195,8 +205,13 @@ const publishPost = () => {
         postData.schedule_at = form.value.schedule_at;
     }
 
-    router.post('/social/posts/publish', postData, {
-        onSuccess: () => {
+    router.post('/posts/publish', postData, {
+        onSuccess: (page) => {
+            // Show success message
+            if (page.props.flash?.success) {
+                toast.success(page.props.flash.success);
+            }
+
             // Reset form
             form.value = {
                 content: '',
@@ -209,6 +224,12 @@ const publishPost = () => {
             isScheduling.value = false;
             validationErrors.value = {};
             characterCounts.value = {};
+        },
+        onError: (errors) => {
+            // Show error message
+            if (errors.error) {
+                toast.error(errors.error);
+            }
         },
         onFinish: () => {
             isPublishing.value = false;
@@ -270,19 +291,8 @@ const setScheduleTime = (time: string) => {
 };
 
 onMounted(() => {
-    // Load available platforms if not provided
-    if (!props.availablePlatforms?.length) {
-        router.get(
-            '/social/posts/platforms',
-            {},
-            {
-                preserveState: false,
-                onSuccess: (response) => {
-                    // Platforms will be available in props
-                },
-            },
-        );
-    }
+    // Platforms are now provided by the controller in the initial page load
+    // No need to fetch them separately
 });
 </script>
 
@@ -294,25 +304,38 @@ onMounted(() => {
             <div class="p-6">
                 <div class="mx-auto max-w-7xl">
                     <!-- Header -->
-                    <div class="mb-12 animate-fade-in">
-                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
-                            Create <span class="text-gradient font-bold">New Post</span> ✍️
+                    <div class="animate-fade-in mb-12">
+                        <h1
+                            class="text-display-1 mb-4 text-neutral-900 dark:text-white"
+                        >
+                            Create
+                            <span class="text-gradient font-bold"
+                                >New Post</span
+                            >
+                            ✍️
                         </h1>
-                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                            Craft compelling posts and publish them across all your connected social media platforms with ease.
+                        <p
+                            class="text-body-large max-w-3xl leading-relaxed text-neutral-600 dark:text-neutral-400"
+                        >
+                            Craft compelling posts and publish them across all
+                            your connected social media platforms with ease.
                         </p>
                     </div>
 
                     <!-- Flash Messages -->
                     <div
                         v-if="flash?.success"
-                        class="mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-emerald-800/60 dark:bg-emerald-900/30"
+                        class="animate-slide-up mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
                     >
                         <div class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500"
+                            >
                                 <CheckCircle class="h-5 w-5 text-white" />
                             </div>
-                            <p class="text-body-large font-medium text-emerald-800 dark:text-emerald-200">
+                            <p
+                                class="text-body-large font-medium text-emerald-800 dark:text-emerald-200"
+                            >
                                 {{ flash.success }}
                             </p>
                         </div>
@@ -320,13 +343,17 @@ onMounted(() => {
 
                     <div
                         v-if="flash?.error"
-                        class="mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-red-800/60 dark:bg-red-900/30"
+                        class="animate-slide-up mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm dark:border-red-800/60 dark:bg-red-900/30"
                     >
                         <div class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500"
+                            >
                                 <AlertCircle class="h-5 w-5 text-white" />
                             </div>
-                            <p class="text-body-large font-medium text-red-800 dark:text-red-200">
+                            <p
+                                class="text-body-large font-medium text-red-800 dark:text-red-200"
+                            >
                                 {{ flash.error }}
                             </p>
                         </div>
@@ -336,14 +363,23 @@ onMounted(() => {
                         <!-- Main Content -->
                         <div class="space-y-8 lg:col-span-2">
                             <!-- Content Input -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
                                 <div class="mb-6">
-                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                                    <h2
+                                        class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                                    >
                                         Content Creation
                                     </h2>
-                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                                        Write your post content. Character limits vary by platform.
+                                    <p
+                                        class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        Write your post content. Character
+                                        limits vary by platform.
                                     </p>
                                 </div>
 
@@ -376,9 +412,7 @@ onMounted(() => {
                                                             : 'text-neutral-600 dark:text-neutral-400',
                                                     ]"
                                                 >
-                                                    {{
-                                                        currentCharacterCount
-                                                    }}
+                                                    {{ currentCharacterCount }}
                                                     /
                                                     {{ maxCharacterLimit }}
                                                     characters
@@ -551,7 +585,7 @@ onMounted(() => {
                                                                 }}</span
                                                             >
                                                             <span
-                                                                class="text-body font-medium capitalize text-red-700 dark:text-red-300"
+                                                                class="text-body font-medium text-red-700 capitalize dark:text-red-300"
                                                                 >{{
                                                                     platform
                                                                 }}</span
@@ -577,14 +611,23 @@ onMounted(() => {
                             </div>
 
                             <!-- Media & Links -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
                                 <div class="mb-6">
-                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                                    <h2
+                                        class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                                    >
                                         Media & Links
                                     </h2>
-                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                                        Add images, videos, or links to make your post more engaging (optional).
+                                    <p
+                                        class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        Add images, videos, or links to make
+                                        your post more engaging (optional).
                                     </p>
                                 </div>
 
@@ -714,15 +757,27 @@ onMounted(() => {
                             </div>
 
                             <!-- Scheduling -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-green-500 to-emerald-500"></div>
-                                <div class="mb-6 flex items-start justify-between">
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
+                                <div
+                                    class="mb-6 flex items-start justify-between"
+                                >
                                     <div>
-                                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                                        <h2
+                                            class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                                        >
                                             Schedule Post
                                         </h2>
-                                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                                            Schedule your post to be published at the perfect time for maximum engagement.
+                                        <p
+                                            class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                        >
+                                            Schedule your post to be published
+                                            at the perfect time for maximum
+                                            engagement.
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-3">
@@ -863,13 +918,21 @@ onMounted(() => {
                         <!-- Sidebar -->
                         <div class="space-y-8">
                             <!-- Platform Selection -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-amber-500 to-orange-500"></div>
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-orange-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
                                 <div class="mb-6">
-                                    <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                                    <h2
+                                        class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                                    >
                                         Select Platforms
                                     </h2>
-                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                    <p
+                                        class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                    >
                                         Choose where to publish your post.
                                     </p>
                                 </div>
@@ -919,7 +982,7 @@ onMounted(() => {
                                                     <div>
                                                         <Label
                                                             :for="platform"
-                                                            class="text-body cursor-pointer font-medium capitalize text-neutral-900 dark:text-white"
+                                                            class="text-body cursor-pointer font-medium text-neutral-900 capitalize dark:text-white"
                                                         >
                                                             {{ platform }}
                                                         </Label>
@@ -1005,13 +1068,21 @@ onMounted(() => {
                             </div>
 
                             <!-- Character Limits Reference -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
                                 <div class="mb-4">
-                                    <h3 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
+                                    <h3
+                                        class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                                    >
                                         Platform Limits
                                     </h3>
-                                    <p class="text-body-large text-neutral-600 dark:text-neutral-400">
+                                    <p
+                                        class="text-body-large text-neutral-600 dark:text-neutral-400"
+                                    >
                                         Character limits for each platform
                                     </p>
                                 </div>
@@ -1028,7 +1099,7 @@ onMounted(() => {
                                                 platformIcons[platform]
                                             }}</span>
                                             <span
-                                                class="text-body-small font-medium capitalize text-neutral-700 dark:text-neutral-300"
+                                                class="text-body-small font-medium text-neutral-700 capitalize dark:text-neutral-300"
                                             >
                                                 {{ platform }}
                                             </span>
@@ -1043,8 +1114,12 @@ onMounted(() => {
                             </div>
 
                             <!-- Publish Button -->
-                            <div class="card-elevated relative overflow-hidden animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                                <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                            <div
+                                class="card-elevated animate-slide-up group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                            >
+                                <div
+                                    class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                ></div>
                                 <Button
                                     class="btn-primary w-full py-4 text-base font-semibold"
                                     size="lg"

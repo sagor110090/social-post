@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\WebhookSecurityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -20,4 +21,20 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('/subscriptions/{subscription}', [AdminController::class, 'cancelSubscription'])->name('subscriptions.cancel');
     
     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+    
+    // Webhook Security Management
+    Route::prefix('webhooks/security')->name('webhooks.security.')->group(function () {
+        Route::get('/stats', [WebhookSecurityController::class, 'stats'])->name('stats');
+        Route::get('/health', [WebhookSecurityController::class, 'healthCheck'])->name('health');
+        Route::get('/config', [WebhookSecurityController::class, 'config'])->name('config');
+        Route::put('/config', [WebhookSecurityController::class, 'updateConfig'])->name('config.update');
+        
+        Route::get('/blocked-ips', [WebhookSecurityController::class, 'blockedIps'])->name('blocked-ips');
+        Route::post('/block-ip', [WebhookSecurityController::class, 'blockIp'])->name('block-ip');
+        Route::post('/unblock-ip', [WebhookSecurityController::class, 'unblockIp'])->name('unblock-ip');
+        
+        Route::delete('/violations', [WebhookSecurityController::class, 'clearViolations'])->name('violations.clear');
+        Route::get('/events', [WebhookSecurityController::class, 'recentEvents'])->name('events');
+        Route::get('/export', [WebhookSecurityController::class, 'exportReport'])->name('export');
+    });
 });

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PostAnalytics extends Model
 {
@@ -35,6 +36,11 @@ class PostAnalytics extends Model
     public function scheduledPost(): BelongsTo
     {
         return $this->belongsTo(ScheduledPost::class);
+    }
+
+    public function webhookEventProcessing(): HasMany
+    {
+        return $this->hasMany(WebhookEventProcessing::class);
     }
 
     public function calculateEngagementRate(): float

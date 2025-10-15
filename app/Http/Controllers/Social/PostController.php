@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Social\SocialPostService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class PostController extends Controller
 {
@@ -18,23 +19,40 @@ class PostController extends Controller
      */
     public function create(Request $request)
     {
-        $user = Auth::user();
-        
-        if (!$user) {
-            return redirect()->route('login');
-        }
-        
-        $availablePlatforms = $this->socialPostService->getAvailablePlatforms($user);
-        $characterLimits = $this->socialPostService->getCharacterLimits();
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return redirect()->route('login');
+            }
+            
+            $availablePlatforms = $this->socialPostService->getAvailablePlatforms($user);
+            $characterLimits = $this->socialPostService->getCharacterLimits();
 
-        return inertia('Social/Create', [
-            'availablePlatforms' => $availablePlatforms,
-            'characterLimits' => $characterLimits,
-            'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-            ]
-        ]);
+            return Inertia::render('Social/Create', [
+                'availablePlatforms' => $availablePlatforms,
+                'characterLimits' => $characterLimits,
+                'flash' => [
+                    'success' => $request->session()->get('success'),
+                    'error' => $request->session()->get('error'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error in PostController::create: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => Auth::id(),
+            ]);
+            
+            // Return a proper Inertia response with error
+            return Inertia::render('Social/Create', [
+                'availablePlatforms' => [],
+                'characterLimits' => [],
+                'flash' => [
+                    'error' => 'An error occurred while loading the page. Please try again.',
+                ]
+            ]);
+        }
     }
 
     /**
@@ -95,6 +113,10 @@ class PostController extends Controller
                 'platform' => $request->get('platform'),
                 'limit' => $limit,
                 'offset' => $offset,
+            ],
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
             ]
         ]);
     }
