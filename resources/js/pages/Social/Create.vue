@@ -475,11 +475,10 @@ onMounted(() => {
                                             </h3>
                                         </div>
                                         <div class="space-y-3">
-                                            <p
-                                                class="text-body whitespace-pre-wrap text-neutral-700 dark:text-neutral-300"
-                                            >
-                                                {{ form.content }}
-                                            </p>
+                                            <div
+                                                class="text-body text-neutral-700 dark:text-neutral-300"
+                                                v-html="form.content.replace(/\n/g, '<br>')"
+                                            ></div>
                                             <div
                                                 v-if="form.link"
                                                 class="mt-3 rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-800"

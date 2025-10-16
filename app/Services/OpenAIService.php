@@ -36,12 +36,12 @@ class OpenAIService
                         'content' => $prompt
                     ]
                 ],
-                'model' => 'qwen/qwen3-32b',
+                'model' => 'openai/gpt-oss-120b',
                 'temperature' => 0.6,
                 'max_completion_tokens' => 4096,
                 'top_p' => 0.95,
                 'stream' => false,
-                'reasoning_effort' => 'default',
+                'reasoning_effort' => 'medium',
                 'stop' => null,
             ]);
 
@@ -109,6 +109,7 @@ class OpenAIService
 
     private function parseResponse(string $content): array
     {
+        Log::info('Raw response:', ['content' => $content]);
         // Try to extract JSON from the response
         if (preg_match('/\{.*\}/s', $content, $matches)) {
             $json = json_decode($matches[0], true);
@@ -148,13 +149,16 @@ class OpenAIService
         // Remove hashtags from content for clean text
         $content = preg_replace('/#(\w+)/', '', $content);
 
-        // Clean up extra whitespace
-        $content = preg_replace('/\s+/', ' ', $content);
+        // Clean up extra whitespace but preserve newlines
+        $content = preg_replace('/[ \t]+/', ' ', $content); // Replace tabs and multiple spaces with single space
+        $content = preg_replace('/\n\s*\n/', "\n\n", $content); // Ensure double newlines for paragraphs
         $content = trim($content);
 
         // Remove any JSON artifacts
         $content = preg_replace('/^\{?\s*["\']?content["\']?\s*:\s*["\']?/', '', $content);
         $content = preg_replace('/["\']?\s*(,|\})?\s*$/', '', $content);
+
+         
 
         return $content;
     }
@@ -186,12 +190,12 @@ class OpenAIService
                         Return as JSON with 'ideas' array containing strings."
                     ]
                 ],
-                'model' => 'qwen/qwen3-32b',
+                'model' => 'openai/gpt-oss-120b',
                 'temperature' => 0.8,
                 'max_completion_tokens' => 4096,
                 'top_p' => 0.95,
                 'stream' => false,
-                'reasoning_effort' => 'default',
+                'reasoning_effort' => 'medium',
                 'stop' => null,
             ]);
 
@@ -244,12 +248,12 @@ class OpenAIService
                         Return as JSON with 'improved_content' and 'suggestions' array."
                     ]
                 ],
-                'model' => 'qwen/qwen3-32b',
+                'model' => 'openai/gpt-oss-120b',
                 'temperature' => 0.6,
                 'max_completion_tokens' => 4096,
                 'top_p' => 0.95,
                 'stream' => false,
-                'reasoning_effort' => 'default',
+                'reasoning_effort' => 'medium',
                 'stop' => null,
             ]);
 
