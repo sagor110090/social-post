@@ -20,6 +20,8 @@ class FacebookController extends Controller
             ->where('platform', 'facebook')
             ->first();
 
+
+
         if (!$account) {
             return response()->json(['error' => 'No Facebook account connected'], 404);
         }
@@ -29,6 +31,7 @@ class FacebookController extends Controller
                 'access_token' => $account->access_token,
                 'fields' => 'id,name,username,category,access_token,tasks,instagram_business_account,fan_count,followers_count'
             ]);
+
 
             $pages = $response->json();
 
@@ -174,7 +177,6 @@ class FacebookController extends Controller
             ->where('platform', 'facebook')
             ->first();
 
-        dd($account);
 
         if (!$account) {
             if ($request->inertia()) {
@@ -190,9 +192,10 @@ class FacebookController extends Controller
                 'fields' => 'id,name,username,category,access_token,tasks,instagram_business_account,fan_count,followers_count'
             ]);
 
+
             $pages = $response->json();
 
-            dd($pages);
+
 
             if (!isset($pages['data'])) {
                 if ($request->inertia()) {
@@ -208,6 +211,7 @@ class FacebookController extends Controller
                 ]),
                 'last_synced_at' => now()
             ]);
+
 
             if ($request->inertia()) {
                 return back()->with('success', 'Facebook pages refreshed successfully');

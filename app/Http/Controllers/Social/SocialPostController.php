@@ -44,17 +44,17 @@ class SocialPostController extends Controller
         // Check if user has connected the requested platforms
         $availablePlatforms = $this->socialPostService->getAvailablePlatforms($user);
         $requestedPlatforms = $request->platforms;
-        
+
         $missingPlatforms = array_diff($requestedPlatforms, $availablePlatforms);
-        
+
         if (!empty($missingPlatforms)) {
             $errorMessage = 'Missing connected accounts for platforms: ' . implode(', ', $missingPlatforms);
-            
+
             // Check if this is an Inertia request (not an API request)
             if ($request->header('X-Inertia') && !$request->wantsJson()) {
                 return redirect()->back()->with('error', $errorMessage);
             }
-            
+
             // Return JSON for API requests
             return response()->json(['error' => $errorMessage], 400);
         }
@@ -70,14 +70,14 @@ class SocialPostController extends Controller
 
         if (!empty($validationErrors)) {
             $errorMessage = 'Content validation failed for some platforms';
-            
+
             // Check if this is an Inertia request (not an API request)
             if ($request->header('X-Inertia') && !$request->wantsJson()) {
                 return redirect()->back()
                     ->with('error', $errorMessage)
                     ->with('validation_errors', $validationErrors);
             }
-            
+
             // Return JSON for API requests
             return response()->json([
                 'error' => $errorMessage,
@@ -104,12 +104,12 @@ class SocialPostController extends Controller
                 $scheduledPost = $this->scheduledPostService->schedulePost($post, $requestedPlatforms, $scheduledAt);
 
                 $successMessage = 'Post scheduled successfully for ' . $scheduledAt->format('M j, Y \a\t g:i A');
-            
+
             // Check if this is an Inertia request (not an API request)
             if ($request->header('X-Inertia') && !$request->wantsJson()) {
                 return redirect()->route('social.posts.history')->with('success', $successMessage);
             }
-            
+
             // Return JSON for API requests
             return response()->json([
                 'success' => true,
@@ -125,12 +125,12 @@ class SocialPostController extends Controller
 
             } catch (\Exception $e) {
                 $errorMessage = 'Failed to schedule post: ' . $e->getMessage();
-                
-// Check if this is an Inertia request (not an API request)
-            if ($request->header('X-Inertia') && !$request->wantsJson()) {
+
+                // Check if this is an Inertia request (not an API request)
+                if ($request->header('X-Inertia') && !$request->wantsJson()) {
                     return redirect()->back()->with('error', $errorMessage);
                 }
-                
+
                 // Return JSON for API requests
                 return response()->json(['error' => $errorMessage], 400);
             }
@@ -166,14 +166,14 @@ class SocialPostController extends Controller
         $post->update(['platform_results' => $platformResults]);
 
         $message = $allSuccessful ? 'Post published successfully!' : 'Post published with some errors';
-        
+
         // Check if this is an Inertia request (not an API request)
         if ($request->header('X-Inertia') && !$request->wantsJson()) {
             return redirect()->route('social.posts.history')
                 ->with('success', $message)
                 ->with('results', $results);
         }
-        
+
         // Return JSON for API requests
         return response()->json([
             'success' => true,
@@ -309,7 +309,7 @@ class SocialPostController extends Controller
         if ($request->header('X-Inertia') && !$request->wantsJson()) {
             return redirect()->route('social.posts.history')->with('success', $successMessage);
         }
-        
+
         // Return JSON for API requests
         return response()->json([
             'success' => true,
