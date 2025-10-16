@@ -202,7 +202,7 @@ class OAuthController extends Controller
     /**
      * Create a new social account.
      */
-    private function createSocialAccount(User $user, $socialUser, string $provider): void
+    private function createSocialAccount(User $user, $socialUser, string $provider, ?string $userToken = null): void
     {
         // For Facebook pages, we already have the page access token
         if ($provider === 'facebook' && isset($socialUser->token) && method_exists($socialUser, 'getId') === false) {
@@ -228,6 +228,7 @@ class OAuthController extends Controller
             'email' => $socialUser->getEmail(),
             'avatar' => $socialUser->getAvatar(),
             'access_token' => $tokens['access_token'],
+            'user_token' => $userToken,
             'refresh_token' => $tokens['refresh_token'] ?? null,
             'token_expires_at' => $tokens['expires_at'] ?? null,
             'additional_data' => $tokens['additional_data'] ?? null,
@@ -238,7 +239,7 @@ class OAuthController extends Controller
     /**
      * Update an existing social account.
      */
-    private function updateSocialAccount(SocialAccount $account, $socialUser, string $provider): void
+    private function updateSocialAccount(SocialAccount $account, $socialUser, string $provider, ?string $userToken = null): void
     {
         // For Facebook pages, we already have the page access token
         if ($provider === 'facebook' && isset($socialUser->token) && method_exists($socialUser, 'getId') === false) {
@@ -261,6 +262,7 @@ class OAuthController extends Controller
             'email' => $socialUser->getEmail(),
             'avatar' => $socialUser->getAvatar(),
             'access_token' => $tokens['access_token'],
+            'user_token' => $userToken ?? $account->user_token,
             'refresh_token' => $tokens['refresh_token'] ?? $account->refresh_token,
             'token_expires_at' => $tokens['expires_at'] ?? $account->token_expires_at,
             'additional_data' => $tokens['additional_data'] ?? $account->additional_data,
@@ -429,10 +431,10 @@ class OAuthController extends Controller
 
         if ($existingAccount) {
             // Update existing account
-            $this->updateSocialAccount($existingAccount, $pageSocialUser, 'facebook');
+            $this->updateSocialAccount($existingAccount, $pageSocialUser, 'facebook', $userToken);
         } else {
             // Create new social account
-            $this->createSocialAccount($user, $pageSocialUser, 'facebook');
+            $this->createSocialAccount($user, $pageSocialUser, 'facebook', $userToken);
         }
 
         // Clear session data

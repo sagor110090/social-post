@@ -27,8 +27,15 @@ class FacebookController extends Controller
         }
 
         try {
+            // Use user_token for fetching pages (not page access token)
+            $tokenToUse = $account->user_token ?? $account->access_token;
+            
+            if (!$tokenToUse) {
+                return response()->json(['error' => 'No valid token available for fetching pages'], 400);
+            }
+            
             $response = Http::get("https://graph.facebook.com/v18.0/me/accounts", [
-                'access_token' => $account->access_token,
+                'access_token' => $tokenToUse,
                 'fields' => 'id,name,username,category,access_token,tasks,instagram_business_account,fan_count,followers_count'
             ]);
 
@@ -185,12 +192,24 @@ class FacebookController extends Controller
             return response()->json(['error' => 'No Facebook account connected'], 404);
         }
 
+
         try {
+            // Use user_token for fetching pages (not page access token)
+            $tokenToUse = $account->user_token ?? $account->access_token;
+            
+            if (!$tokenToUse) {
+                if ($request->inertia()) {
+                    return back()->with('error', 'No valid token available for refreshing pages');
+                }
+                return response()->json(['error' => 'No valid token available for refreshing pages'], 400);
+            }
+            
             // Re-fetch pages with fresh tokens
             $response = Http::get("https://graph.facebook.com/v18.0/me/accounts", [
-                'access_token' => $account->access_token,
+                'access_token' => $tokenToUse,
                 'fields' => 'id,name,username,category,access_token,tasks,instagram_business_account,fan_count,followers_count'
             ]);
+
 
 
             $pages = $response->json();

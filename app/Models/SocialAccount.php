@@ -19,6 +19,7 @@ class SocialAccount extends Model
         'email',
         'avatar',
         'access_token',
+        'user_token',
         'refresh_token',
         'token_expires_at',
         'additional_data',
@@ -28,6 +29,7 @@ class SocialAccount extends Model
 
     protected $casts = [
         'access_token' => 'encrypted:array',
+        'user_token' => 'encrypted:array',
         'refresh_token' => 'encrypted:array',
         'token_expires_at' => 'datetime',
         'is_active' => 'boolean',
