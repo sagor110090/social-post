@@ -17,7 +17,8 @@ class OAuthController extends Controller
     public function redirect(string $provider)
     {
         $this->validateProvider($provider);
-        
+
+
         return Socialite::driver($provider)
             ->scopes($this->getScopes($provider))
             ->with($this->getAdditionalParameters($provider))
@@ -33,9 +34,14 @@ class OAuthController extends Controller
 
         try {
             $socialUser = Socialite::driver($provider)->user();
-            
+
             $user = Auth::user();
-            
+
+            // For Facebook, we need to handle page selection
+            if ($provider === 'facebook') {
+                return $this->handleFacebookPageConnection($user, $socialUser);
+            }
+
             // Check if account already exists
             $existingAccount = SocialAccount::where('platform', $provider)
                 ->where('platform_id', $socialUser->getId())
@@ -66,7 +72,7 @@ class OAuthController extends Controller
         $this->validateProvider($provider);
 
         $user = Auth::user();
-        
+
         $socialAccount = SocialAccount::where('user_id', $user->id)
             ->where('platform', $provider)
             ->first();
@@ -88,7 +94,7 @@ class OAuthController extends Controller
     public function accounts(Request $request)
     {
         $user = Auth::user();
-        
+
         $accounts = SocialAccount::where('user_id', $user->id)
             ->with('user')
             ->get()
@@ -115,7 +121,7 @@ class OAuthController extends Controller
     private function validateProvider(string $provider): void
     {
         $supportedProviders = ['facebook', 'instagram', 'linkedin', 'twitter'];
-        
+
         if (!in_array($provider, $supportedProviders)) {
             abort(404, 'Provider not supported.');
         }
@@ -198,14 +204,27 @@ class OAuthController extends Controller
      */
     private function createSocialAccount(User $user, $socialUser, string $provider): void
     {
-        $tokens = $this->extractTokens($socialUser, $provider);
-        
+        // For Facebook pages, we already have the page access token
+        if ($provider === 'facebook' && isset($socialUser->token) && method_exists($socialUser, 'getId') === false) {
+            $tokens = [
+                'access_token' => $socialUser->token,
+                'refresh_token' => null,
+                'expires_at' => null,
+                'additional_data' => [
+                    'token_type' => $socialUser->tokenType ?? 'Bearer',
+                    'is_page' => true,
+                ],
+            ];
+        } else {
+            $tokens = $this->extractTokens($socialUser, $provider);
+        }
+
         SocialAccount::create([
             'user_id' => $user->id,
             'platform' => $provider,
             'platform_id' => $socialUser->getId(),
-            'username' => $socialUser->getNickname() ?? $socialUser->getEmail(),
-            'display_name' => $socialUser->getName(),
+            'username' => $socialUser->getNickname() ?? $socialUser->getEmail() ?? $socialUser->id,
+            'display_name' => $socialUser->getName() ?? $socialUser->name,
             'email' => $socialUser->getEmail(),
             'avatar' => $socialUser->getAvatar(),
             'access_token' => $tokens['access_token'],
@@ -221,11 +240,24 @@ class OAuthController extends Controller
      */
     private function updateSocialAccount(SocialAccount $account, $socialUser, string $provider): void
     {
-        $tokens = $this->extractTokens($socialUser, $provider);
-        
+        // For Facebook pages, we already have the page access token
+        if ($provider === 'facebook' && isset($socialUser->token) && method_exists($socialUser, 'getId') === false) {
+            $tokens = [
+                'access_token' => $socialUser->token,
+                'refresh_token' => null,
+                'expires_at' => null,
+                'additional_data' => [
+                    'token_type' => $socialUser->tokenType ?? 'Bearer',
+                    'is_page' => true,
+                ],
+            ];
+        } else {
+            $tokens = $this->extractTokens($socialUser, $provider);
+        }
+
         $account->update([
-            'username' => $socialUser->getNickname() ?? $socialUser->getEmail(),
-            'display_name' => $socialUser->getName(),
+            'username' => $socialUser->getNickname() ?? $socialUser->getEmail() ?? $socialUser->id,
+            'display_name' => $socialUser->getName() ?? $socialUser->name,
             'email' => $socialUser->getEmail(),
             'avatar' => $socialUser->getAvatar(),
             'access_token' => $tokens['access_token'],
@@ -258,13 +290,13 @@ class OAuthController extends Controller
                 $tokens['additional_data'] = [
                     'token_type' => $socialUser->tokenType ?? 'Bearer',
                 ];
-                
+
                 // Fetch Facebook pages
                 try {
                     $pagesResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/me/accounts", [
                         'access_token' => $socialUser->token
                     ]);
-                    
+
                     if ($pagesResponse->successful()) {
                         $pagesData = $pagesResponse->json();
                         $tokens['additional_data']['pages'] = $pagesData['data'] ?? [];
@@ -273,7 +305,7 @@ class OAuthController extends Controller
                     \Illuminate\Support\Facades\Log::error('Failed to fetch Facebook pages: ' . $e->getMessage());
                 }
                 break;
-                
+
             case 'instagram':
                 if ($socialUser->expiresIn) {
                     $tokens['expires_at'] = now()->addSeconds($socialUser->expiresIn);
@@ -298,5 +330,134 @@ class OAuthController extends Controller
         }
 
         return $tokens;
+    }
+
+    /**
+     * Handle Facebook Page connection by showing page selection
+     */
+    private function handleFacebookPageConnection(User $user, $socialUser)
+    {
+        try {
+            // Fetch Facebook pages
+            $pagesResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/me/accounts", [
+                'access_token' => $socialUser->token
+            ]);
+
+            if (!$pagesResponse->successful()) {
+                throw new \Exception('Failed to fetch Facebook pages');
+            }
+
+            $pagesData = $pagesResponse->json();
+            $pages = $pagesData['data'] ?? [];
+
+            if (empty($pages)) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'No Facebook pages found. Make sure you have admin access to at least one Facebook page.');
+            }
+
+            // Store the user token and pages in session for page selection
+            session([
+                'facebook_user_token' => $socialUser->token,
+                'facebook_pages' => $pages,
+                'facebook_user_info' => [
+                    'id' => $socialUser->getId(),
+                    'name' => $socialUser->getName(),
+                    'email' => $socialUser->getEmail(),
+                    'avatar' => $socialUser->getAvatar(),
+                ]
+            ]);
+
+            // Redirect to page selection view
+            return redirect()->route('facebook.page.selection');
+
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard')
+                ->with('error', "Failed to connect Facebook: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Save selected Facebook page as social account
+     */
+    public function saveFacebookPage(Request $request)
+    {
+        $request->validate([
+            'page_id' => 'required|string',
+            'page_name' => 'required|string',
+            'page_access_token' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+
+        // Check if account already exists
+        $existingAccount = SocialAccount::where('platform', 'facebook')
+            ->where('platform_id', $request->page_id)
+            ->first();
+
+        // Get user info from session
+        $userInfo = session('facebook_user_info', []);
+        $userToken = session('facebook_user_token');
+
+        // Create social user object for the page
+        $pageSocialUser = new class {
+            public function getId() { return $this->id; }
+            public function getName() { return $this->name; }
+            public function getNickname() { return $this->nickname; }
+            public function getEmail() { return $this->email; }
+            public function getAvatar() { return $this->avatar; }
+
+            public $id;
+            public $name;
+            public $nickname;
+            public $email;
+            public $avatar;
+            public $token;
+            public $refreshToken;
+            public $expiresIn;
+            public $tokenType;
+        };
+
+        $pageSocialUser->id = $request->page_id;
+        $pageSocialUser->name = $request->page_name;
+        $pageSocialUser->nickname = null;
+        $pageSocialUser->email = $userInfo['email'] ?? null;
+        $pageSocialUser->avatar = null; // Pages don't have avatars like users
+        $pageSocialUser->token = $request->page_access_token;
+        $pageSocialUser->refreshToken = null;
+        $pageSocialUser->expiresIn = null;
+        $pageSocialUser->tokenType = 'Bearer';
+
+        if ($existingAccount) {
+            // Update existing account
+            $this->updateSocialAccount($existingAccount, $pageSocialUser, 'facebook');
+        } else {
+            // Create new social account
+            $this->createSocialAccount($user, $pageSocialUser, 'facebook');
+        }
+
+        // Clear session data
+        session()->forget(['facebook_user_token', 'facebook_pages', 'facebook_user_info']);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Facebook page connected successfully!');
+    }
+
+    /**
+     * Show Facebook page selection view
+     */
+    public function showPageSelection()
+    {
+        $pages = session('facebook_pages', []);
+        $userInfo = session('facebook_user_info', []);
+
+        if (empty($pages)) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No Facebook pages found. Please try connecting again.');
+        }
+
+        return inertia('Social/FacebookPageSelection', [
+            'pages' => $pages,
+            'userInfo' => $userInfo
+        ]);
     }
 }

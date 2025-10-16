@@ -24,10 +24,16 @@ Route::prefix('oauth')->group(function () {
 
     // Get connected accounts
     Route::get('/accounts', [OAuthController::class, 'accounts'])->name('oauth.accounts')->middleware('auth');
+
+    // Save Facebook page selection
+    Route::post('/facebook/save-page', [OAuthController::class, 'saveFacebookPage'])->name('oauth.facebook.save-page')->middleware('auth');
 });
 
 // Facebook Routes
 Route::prefix('facebook')->middleware('auth')->group(function () {
+    // Facebook page selection view
+    Route::get('/page-selection', [OAuthController::class, 'showPageSelection'])->name('facebook.page.selection');
+
     // Get Facebook pages
     Route::get('/pages', [FacebookController::class, 'getPages'])->name('facebook.pages');
 

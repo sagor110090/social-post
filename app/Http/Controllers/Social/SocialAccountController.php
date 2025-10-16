@@ -20,7 +20,7 @@ class SocialAccountController extends Controller
             ->with('user')
             ->get()
             ->map(function ($account) {
-                return [
+                $data = [
                     'id' => $account->id,
                     'platform' => $account->platform,
                     'provider_name' => $this->getProviderName($account->platform),
@@ -31,6 +31,24 @@ class SocialAccountController extends Controller
                     'last_synced_at' => $account->last_synced_at?->diffForHumans(),
                     'connected_at' => $account->created_at->diffForHumans(),
                 ];
+
+                // Add Facebook pages if available
+                if ($account->platform === 'facebook' && isset($account->additional_data['pages'])) {
+                    $data['pages'] = collect($account->additional_data['pages'])->map(function ($page) {
+                        return [
+                            'id' => $page['id'],
+                            'name' => $page['name'],
+                            'username' => $page['username'] ?? null,
+                            'category' => $page['category'] ?? null,
+                            'fan_count' => $page['fan_count'] ?? 0,
+                            'followers_count' => $page['followers_count'] ?? 0,
+                            'access_token' => isset($page['access_token']),
+                            'tasks' => $page['tasks'] ?? [],
+                        ];
+                    })->toArray();
+                }
+
+                return $data;
             });
 
 
