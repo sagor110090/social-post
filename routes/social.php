@@ -27,6 +27,9 @@ Route::prefix('oauth')->group(function () {
 
     // Save Facebook page selection
     Route::post('/facebook/save-page', [OAuthController::class, 'saveFacebookPage'])->name('oauth.facebook.save-page')->middleware('auth');
+    
+    // Save Instagram account selection
+    Route::post('/instagram/save-account', [OAuthController::class, 'saveInstagramAccount'])->name('oauth.instagram.save-account')->middleware('auth');
 });
 
 // Facebook Routes
@@ -49,6 +52,8 @@ Route::prefix('facebook')->middleware('auth')->group(function () {
 
 // Instagram Routes
 Route::prefix('instagram')->middleware('auth')->group(function () {
+    // Instagram account selection view
+    Route::get('/account-selection', [OAuthController::class, 'showInstagramAccountSelection'])->name('instagram.account.selection');
     // Get Instagram business accounts
     Route::get('/accounts', [InstagramController::class, 'getBusinessAccounts'])->name('instagram.accounts');
 
