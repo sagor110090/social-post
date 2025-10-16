@@ -16,7 +16,7 @@ class TwitterController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {
@@ -64,7 +64,7 @@ class TwitterController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {
@@ -129,7 +129,7 @@ class TwitterController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {
@@ -175,7 +175,7 @@ class TwitterController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {
@@ -248,7 +248,7 @@ class TwitterController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {
@@ -287,7 +287,7 @@ class TwitterController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'twitter')
+            ->where('platform', 'twitter')
             ->first();
 
         if (!$account) {

@@ -12,9 +12,7 @@ class SocialAccount extends Model
     use HasFactory;
     protected $fillable = [
         'user_id',
-        'provider',
         'platform',
-        'provider_id',
         'platform_id',
         'username',
         'display_name',
@@ -52,20 +50,7 @@ class SocialAccount extends Model
         return $this->hasMany(PostAnalytics::class);
     }
 
-    public function webhookConfigs(): HasMany
-    {
-        return $this->hasMany(WebhookConfig::class);
-    }
 
-    public function webhookEvents(): HasMany
-    {
-        return $this->hasMany(WebhookEvent::class);
-    }
-
-    public function webhookDeliveryMetrics(): HasMany
-    {
-        return $this->hasMany(WebhookDeliveryMetric::class);
-    }
 
     public function isTokenExpired(): bool
     {
@@ -74,13 +59,12 @@ class SocialAccount extends Model
 
     public function getPlatformDisplayName(): string
     {
-        $platform = $this->provider ?? $this->platform;
-        return match($platform) {
+        return match($this->platform) {
             'facebook' => 'Facebook',
             'instagram' => 'Instagram',
             'linkedin' => 'LinkedIn',
             'twitter' => 'X (Twitter)',
-            default => ucfirst($platform),
+            default => ucfirst($this->platform),
         };
     }
 
@@ -116,19 +100,7 @@ class SocialAccount extends Model
         $this->attributes['platform_id'] = $value;
     }
 
-    /**
-     * Get active webhook config for this social account.
-     */
-    public function getActiveWebhookConfig(): ?WebhookConfig
-    {
-        return $this->webhookConfigs()->active()->first();
-    }
+ 
 
-    /**
-     * Check if this social account has webhooks configured.
-     */
-    public function hasWebhooksConfigured(): bool
-    {
-        return $this->webhookConfigs()->active()->exists();
-    }
+
 }

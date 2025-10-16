@@ -25,6 +25,7 @@ class SocialAccountController extends Controller
             ->orderBy('platform_username')
             ->get();
 
+
         return response()->json($accounts);
     }
 }

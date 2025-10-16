@@ -16,7 +16,7 @@ class LinkedInController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'linkedin')
+            ->where('platform', 'linkedin')
             ->first();
 
         if (!$account) {
@@ -59,7 +59,7 @@ class LinkedInController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'linkedin')
+            ->where('platform', 'linkedin')
             ->first();
 
         if (!$account) {
@@ -129,7 +129,7 @@ class LinkedInController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'linkedin')
+            ->where('platform', 'linkedin')
             ->first();
 
         if (!$account) {
@@ -247,7 +247,7 @@ class LinkedInController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'linkedin')
+            ->where('platform', 'linkedin')
             ->first();
 
         if (!$account) {
@@ -281,7 +281,7 @@ class LinkedInController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'linkedin')
+            ->where('platform', 'linkedin')
             ->first();
 
         if (!$account) {

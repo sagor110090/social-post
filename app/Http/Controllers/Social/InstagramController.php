@@ -55,7 +55,7 @@ class InstagramController extends Controller
                     ]);
 
                     $igAccount = $igResponse->json();
-                    
+
                     if (!isset($igAccount['error'])) {
                         $instagramAccounts[] = array_merge($igAccount, [
                             'page_id' => $page['id'],

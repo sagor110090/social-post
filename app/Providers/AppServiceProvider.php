@@ -22,17 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register webhook rate limiting
-        RateLimiter::for('webhooks', function (Request $request) {
-            // Different limits based on platform
-            $platform = $request->segment(2); // /webhooks/{platform}
-            
-            return match($platform) {
-                'facebook', 'instagram' => Limit::perMinute(100),
-                'twitter' => Limit::perMinute(60),
-                'linkedin' => Limit::perMinute(50),
-                default => Limit::perMinute(30),
-            };
-        });
+
     }
 }

@@ -63,7 +63,7 @@ class SocialPostService
      */
     private function postToPlatform(Post $post, SocialAccount $account): array
     {
-        return match ($account->provider) {
+        return match ($account->platform) {
             'facebook' => $this->postToFacebook($post, $account),
             'instagram' => $this->postToInstagram($post, $account),
             'linkedin' => $this->postToLinkedIn($post, $account),

@@ -37,8 +37,8 @@ class OAuthController extends Controller
             $user = Auth::user();
             
             // Check if account already exists
-            $existingAccount = SocialAccount::where('provider', $provider)
-                ->where('provider_id', $socialUser->getId())
+            $existingAccount = SocialAccount::where('platform', $provider)
+                ->where('platform_id', $socialUser->getId())
                 ->first();
 
             if ($existingAccount) {
@@ -68,7 +68,7 @@ class OAuthController extends Controller
         $user = Auth::user();
         
         $socialAccount = SocialAccount::where('user_id', $user->id)
-            ->where('provider', $provider)
+            ->where('platform', $provider)
             ->first();
 
         if (!$socialAccount) {
@@ -95,8 +95,8 @@ class OAuthController extends Controller
             ->map(function ($account) {
                 return [
                     'id' => $account->id,
-                    'provider' => $account->provider,
-                    'provider_name' => $this->getProviderName($account->provider),
+                    'platform' => $account->platform,
+                    'provider_name' => $this->getProviderName($account->platform),
                     'username' => $account->username,
                     'display_name' => $account->display_name,
                     'avatar' => $account->avatar,
@@ -202,8 +202,8 @@ class OAuthController extends Controller
         
         SocialAccount::create([
             'user_id' => $user->id,
-            'provider' => $provider,
-            'provider_id' => $socialUser->getId(),
+            'platform' => $provider,
+            'platform_id' => $socialUser->getId(),
             'username' => $socialUser->getNickname() ?? $socialUser->getEmail(),
             'display_name' => $socialUser->getName(),
             'email' => $socialUser->getEmail(),

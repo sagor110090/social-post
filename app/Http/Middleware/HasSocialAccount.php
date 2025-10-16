@@ -23,7 +23,7 @@ class HasSocialAccount
         $query = $user->socialAccounts();
 
         if ($provider) {
-            $query->where('provider', $provider);
+            $query->where('platform', $provider);
         }
 
         if ($query->count() === 0) {

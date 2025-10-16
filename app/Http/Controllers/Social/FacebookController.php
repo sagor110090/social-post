@@ -15,8 +15,9 @@ class FacebookController extends Controller
     public function getPages(Request $request)
     {
         $user = auth()->user();
+
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'facebook')
+            ->where('platform', 'facebook')
             ->first();
 
         if (!$account) {
@@ -63,7 +64,7 @@ class FacebookController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'facebook')
+            ->where('platform', 'facebook')
             ->first();
 
         if (!$account) {
@@ -130,7 +131,7 @@ class FacebookController extends Controller
 
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'facebook')
+            ->where('platform', 'facebook')
             ->first();
 
         if (!$account) {
@@ -170,10 +171,15 @@ class FacebookController extends Controller
     {
         $user = auth()->user();
         $account = SocialAccount::where('user_id', $user->id)
-            ->where('provider', 'facebook')
+            ->where('platform', 'facebook')
             ->first();
 
+        dd($account);
+
         if (!$account) {
+            if ($request->inertia()) {
+                return back()->with('error', 'No Facebook account connected');
+            }
             return response()->json(['error' => 'No Facebook account connected'], 404);
         }
 
@@ -186,7 +192,12 @@ class FacebookController extends Controller
 
             $pages = $response->json();
 
+            dd($pages);
+
             if (!isset($pages['data'])) {
+                if ($request->inertia()) {
+                    return back()->with('error', 'Failed to refresh page tokens');
+                }
                 return response()->json(['error' => 'Failed to refresh page tokens'], 400);
             }
 
@@ -198,12 +209,19 @@ class FacebookController extends Controller
                 'last_synced_at' => now()
             ]);
 
+            if ($request->inertia()) {
+                return back()->with('success', 'Facebook pages refreshed successfully');
+            }
+
             return response()->json([
                 'success' => true,
                 'pages_count' => count($pages['data'])
             ]);
 
         } catch (\Exception $e) {
+            if ($request->inertia()) {
+                return back()->with('error', 'Failed to refresh Facebook tokens: ' . $e->getMessage());
+            }
             return response()->json(['error' => 'Failed to refresh Facebook tokens: ' . $e->getMessage()], 500);
         }
     }

@@ -1,14 +1,5 @@
 <script setup lang="ts">
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -78,7 +69,7 @@ const platforms = [
 ];
 
 const connectedProviders = computed(() => {
-    return props.accounts?.map((account) => account.provider) || [];
+    return props.accounts?.map((account) => account.platform) || [];
 });
 
 const isPlatformConnected = (provider) => {
@@ -86,7 +77,7 @@ const isPlatformConnected = (provider) => {
 };
 
 const getConnectedAccount = (provider) => {
-    return props.accounts?.find((account) => account.provider === provider);
+    return props.accounts?.find((account) => account.platform === provider);
 };
 
 const connectAccount = (provider) => {
@@ -104,7 +95,7 @@ const disconnectAccount = () => {
 
     disconnecting.value = true;
 
-    router.delete(`/oauth/${selectedAccount.value.provider}/disconnect`, {
+    router.delete(`/oauth/${selectedAccount.value.platform}/disconnect`, {
         onSuccess: () => {
             showDisconnectDialog.value = false;
             selectedAccount.value = null;
@@ -119,7 +110,7 @@ const refreshAccount = (provider) => {
     loading.value = true;
 
     router.post(
-        `/social/${provider}/refresh-tokens`,
+        `/${provider}/refresh-tokens`,
         {},
         {
             onSuccess: () => {
@@ -155,303 +146,396 @@ onMounted(() => {
             <div class="p-6">
                 <div class="mx-auto max-w-7xl">
                     <!-- Header -->
-                    <div class="mb-12 animate-fade-in">
-                        <h1 class="text-display-1 mb-4 text-neutral-900 dark:text-white">
-                            Social Media <span class="text-gradient font-bold">Accounts</span> 🌐
+                    <div class="animate-fade-in mb-12">
+                        <h1
+                            class="text-display-1 mb-4 text-neutral-900 dark:text-white"
+                        >
+                            Social Media
+                            <span class="text-gradient font-bold"
+                                >Accounts</span
+                            >
+                            🌐
                         </h1>
-                        <p class="text-body-large max-w-3xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        <p
+                            class="text-body-large max-w-3xl leading-relaxed text-neutral-600 dark:text-neutral-400"
+                        >
                             Connect your social media accounts to start posting
                             content across platforms.
                         </p>
                     </div>
 
-                <!-- Flash Messages -->
-                <div
-                    v-if="flash?.success"
-                    class="mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-emerald-800/60 dark:bg-emerald-900/30"
-                >
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500">
-                            <CheckCircleIcon class="h-5 w-5 text-white" />
-                        </div>
-                        <p class="text-body-large font-medium text-emerald-800 dark:text-emerald-200">
-                            {{ flash.success }}
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    v-if="flash?.error"
-                    class="mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm animate-slide-up dark:border-red-800/60 dark:bg-red-900/30"
-                >
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500">
-                            <XCircleIcon class="h-5 w-5 text-white" />
-                        </div>
-                        <p class="text-body-large font-medium text-red-800 dark:text-red-200">
-                            {{ flash.error }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Connected Accounts Summary -->
-                <div class="card-elevated relative overflow-hidden mb-12 animate-slide-up">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-blue-500"></div>
-                    <div class="mb-6">
-                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">
-                            Connected Accounts
-                        </h2>
-                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                            You have {{ accounts?.length || 0 }} social media
-                            account(s) connected
-                        </p>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <div
-                            v-for="account in accounts"
-                            :key="account.id"
-                            class="inline-flex items-center gap-2 rounded-2xl border border-neutral-200/60 bg-white/50 px-4 py-2 shadow-sm backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
-                        >
-                            <component
-                                :is="
-                                    platforms.find(
-                                        (p) =>
-                                            p.provider === account.provider,
-                                    )?.icon
-                                "
-                                class="h-5 w-5"
-                            />
-                            <span class="text-body font-medium text-neutral-900 dark:text-white">
-                                {{ account.display_name }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Platform Cards -->
-                <div class="grid gap-8 lg:grid-cols-2">
+                    <!-- Flash Messages -->
                     <div
-                        v-for="platform in platforms"
-                        :key="platform.provider"
-                        class="card-elevated relative overflow-hidden group hover:scale-[1.02] transition-all duration-300"
+                        v-if="flash?.success"
+                        class="animate-slide-up mb-8 rounded-2xl border border-emerald-200/60 bg-emerald-50/80 p-6 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
                     >
-                        <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                             :class="platform.color"></div>
-                        <div class="mb-6">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-4">
-                                    <div
-                                        :class="[
-                                            platform.color,
-                                            'flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300',
-                                        ]"
-                                    >
-                                        <component
-                                            :is="platform.icon"
-                                            class="h-7 w-7 text-white"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h3 class="text-headline-2 text-neutral-900 dark:text-white">{{
-                                            platform.name
-                                        }}</h3>
-                                        <p class="text-body-large text-neutral-600 dark:text-neutral-400 mt-1">{{
-                                            platform.description
-                                        }}</p>
-                                    </div>
-                                </div>
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500"
+                            >
+                                <CheckCircleIcon class="h-5 w-5 text-white" />
+                            </div>
+                            <p
+                                class="text-body-large font-medium text-emerald-800 dark:text-emerald-200"
+                            >
+                                {{ flash.success }}
+                            </p>
+                        </div>
+                    </div>
 
-                                <!-- Connection Status -->
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        v-if="
-                                            isPlatformConnected(
-                                                platform.provider,
-                                            )
-                                        "
-                                        class="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/80 px-4 py-2 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
-                                    >
-                                        <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <span class="text-body font-medium text-emerald-700 dark:text-emerald-300">Connected</span>
-                                    </div>
-                                    <div
-                                        v-else
-                                        class="inline-flex items-center gap-2 rounded-full border border-neutral-200/60 bg-neutral-50/80 px-4 py-2 backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
-                                    >
-                                        <div class="h-2 w-2 rounded-full bg-neutral-400"></div>
-                                        <span class="text-body font-medium text-neutral-600 dark:text-neutral-400">Not Connected</span>
-                                    </div>
-                                </div>
+                    <div
+                        v-if="flash?.error"
+                        class="animate-slide-up mb-8 rounded-2xl border border-red-200/60 bg-red-50/80 p-6 backdrop-blur-sm dark:border-red-800/60 dark:bg-red-900/30"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500"
+                            >
+                                <XCircleIcon class="h-5 w-5 text-white" />
+                            </div>
+                            <p
+                                class="text-body-large font-medium text-red-800 dark:text-red-200"
+                            >
+                                {{ flash.error }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Connected Accounts Summary -->
+                    <div
+                        class="card-elevated animate-slide-up relative mb-12 overflow-hidden"
+                    >
+                        <div
+                            class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-blue-500"
+                        ></div>
+                        <div class="mb-6">
+                            <h2
+                                class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                            >
+                                Connected Accounts
+                            </h2>
+                            <p
+                                class="text-body-large text-neutral-600 dark:text-neutral-400"
+                            >
+                                You have {{ accounts?.length || 0 }} social
+                                media account(s) connected
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <div
+                                v-for="account in accounts"
+                                :key="account.id"
+                                class="inline-flex items-center gap-2 rounded-2xl border border-neutral-200/60 bg-white/50 px-4 py-2 shadow-sm backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
+                            >
+                                <component
+                                    :is="
+                                        platforms.find(
+                                            (p) =>
+                                                p.provider === account.platform,
+                                        )?.icon
+                                    "
+                                    class="h-5 w-5"
+                                />
+                                <span
+                                    class="text-body font-medium text-neutral-900 dark:text-white"
+                                >
+                                    {{ account.display_name }}
+                                </span>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="space-y-6">
-                            <!-- Connected Account Info -->
+                    <!-- Platform Cards -->
+                    <div class="grid gap-8 lg:grid-cols-2">
+                        <div
+                            v-for="platform in platforms"
+                            :key="platform.provider"
+                            class="card-elevated group relative overflow-hidden transition-all duration-300 hover:scale-[1.02]"
+                        >
                             <div
-                                v-if="isPlatformConnected(platform.provider)"
-                                class="space-y-6"
-                            >
-                                <div class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-6 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80">
-                                    <div
-                                        class="flex items-center justify-between"
-                                    >
-                                        <div class="flex-1">
-                                            <p
-                                                class="text-headline-3 font-semibold text-neutral-900 dark:text-white"
-                                            >
-                                                {{
-                                                    getConnectedAccount(
-                                                        platform.provider,
-                                                    )?.display_name
-                                                }}
-                                            </p>
-                                            <p class="text-body-large text-neutral-600 dark:text-neutral-400 mt-1">
-                                                @{{
-                                                    getConnectedAccount(
-                                                        platform.provider,
-                                                    )?.username
-                                                }}
-                                            </p>
-                                            <div class="flex items-center gap-2 mt-3">
-                                                <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
-                                                <p class="text-body-small text-neutral-500 dark:text-neutral-500">
-                                                    Connected
-                                                    {{
-                                                        formatDate(
-                                                            getConnectedAccount(
-                                                                platform.provider,
-                                                            )?.connected_at,
-                                                        )
-                                                    }}
-                                                </p>
-                                            </div>
+                                class="absolute top-0 left-0 h-1 w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                :class="platform.color"
+                            ></div>
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            :class="[
+                                                platform.color,
+                                                'flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-110',
+                                            ]"
+                                        >
+                                            <component
+                                                :is="platform.icon"
+                                                class="h-7 w-7 text-white"
+                                            />
                                         </div>
-                                        <img
-                                            v-if="
-                                                getConnectedAccount(
-                                                    platform.provider,
-                                                )?.avatar
-                                            "
-                                            :src="
-                                                getConnectedAccount(
-                                                    platform.provider,
-                                                ).avatar
-                                            "
-                                            :alt="
-                                                getConnectedAccount(
-                                                    platform.provider,
-                                                ).display_name
-                                            "
-                                            class="h-14 w-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-neutral-800"
-                                        />
+                                        <div>
+                                            <h3
+                                                class="text-headline-2 text-neutral-900 dark:text-white"
+                                            >
+                                                {{ platform.name }}
+                                            </h3>
+                                            <p
+                                                class="text-body-large mt-1 text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                {{ platform.description }}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- Platform-specific actions -->
-                                <div class="flex gap-3">
-                                    <Button
-                                        v-if="platform.provider === 'facebook'"
-                                        variant="outline"
-                                        @click="
-                                            refreshAccount(platform.provider)
-                                        "
-                                        :disabled="loading"
-                                        class="hover-glow"
-                                    >
-                                        <RefreshCwIcon class="mr-2 h-5 w-5" />
-                                        Refresh Pages
-                                    </Button>
-
-                                    <Button
-                                        variant="outline"
-                                        @click="
-                                            confirmDisconnect(
-                                                getConnectedAccount(
+                                    <!-- Connection Status -->
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            v-if="
+                                                isPlatformConnected(
                                                     platform.provider,
-                                                ),
-                                            )
-                                        "
-                                        :disabled="disconnecting"
-                                        class="hover:border-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                    >
-                                        Disconnect
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <!-- Not Connected State -->
-                            <div v-else class="space-y-6">
-                                <div>
-                                    <h4 class="text-headline-4 mb-4 font-semibold text-neutral-900 dark:text-white">
-                                        Features:
-                                    </h4>
-                                    <ul class="space-y-3">
-                                        <li
-                                            v-for="feature in platform.features"
-                                            :key="feature"
-                                            class="flex items-center gap-3 text-body-large text-neutral-600 dark:text-neutral-400"
+                                                )
+                                            "
+                                            class="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/80 px-4 py-2 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
                                         >
                                             <div
-                                                class="h-2 w-2 rounded-full bg-brand-primary"
+                                                class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
                                             ></div>
-                                            {{ feature }}
-                                        </li>
-                                    </ul>
+                                            <span
+                                                class="text-body font-medium text-emerald-700 dark:text-emerald-300"
+                                                >Connected</span
+                                            >
+                                        </div>
+                                        <div
+                                            v-else
+                                            class="inline-flex items-center gap-2 rounded-full border border-neutral-200/60 bg-neutral-50/80 px-4 py-2 backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-800/50"
+                                        >
+                                            <div
+                                                class="h-2 w-2 rounded-full bg-neutral-400"
+                                            ></div>
+                                            <span
+                                                class="text-body font-medium text-neutral-600 dark:text-neutral-400"
+                                                >Not Connected</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <!-- Connected Account Info -->
+                                <div
+                                    v-if="
+                                        isPlatformConnected(platform.provider)
+                                    "
+                                    class="space-y-6"
+                                >
+                                    <div
+                                        class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-6 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80"
+                                    >
+                                        <div
+                                            class="flex items-center justify-between"
+                                        >
+                                            <div class="flex-1">
+                                                <p
+                                                    class="text-headline-3 font-semibold text-neutral-900 dark:text-white"
+                                                >
+                                                    {{
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        )?.display_name
+                                                    }}
+                                                </p>
+                                                <p
+                                                    class="text-body-large mt-1 text-neutral-600 dark:text-neutral-400"
+                                                >
+                                                    @{{
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        )?.username
+                                                    }}
+                                                </p>
+                                                <div
+                                                    class="mt-3 flex items-center gap-2"
+                                                >
+                                                    <div
+                                                        class="h-2 w-2 rounded-full bg-emerald-500"
+                                                    ></div>
+                                                    <p
+                                                        class="text-body-small text-neutral-500 dark:text-neutral-500"
+                                                    >
+                                                        Connected
+                                                        {{
+                                                            formatDate(
+                                                                getConnectedAccount(
+                                                                    platform.provider,
+                                                                )?.connected_at,
+                                                            )
+                                                        }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <img
+                                                v-if="
+                                                    getConnectedAccount(
+                                                        platform.provider,
+                                                    )?.avatar
+                                                "
+                                                :src="
+                                                    getConnectedAccount(
+                                                        platform.provider,
+                                                    ).avatar
+                                                "
+                                                :alt="
+                                                    getConnectedAccount(
+                                                        platform.provider,
+                                                    ).display_name
+                                                "
+                                                class="h-14 w-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-neutral-800"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Platform-specific actions -->
+                                    <div class="flex gap-3">
+                                        <Button
+                                            v-if="
+                                                platform.provider === 'facebook'
+                                            "
+                                            variant="outline"
+                                            @click="
+                                                refreshAccount(
+                                                    platform.provider,
+                                                )
+                                            "
+                                            :disabled="loading"
+                                            class="hover-glow"
+                                        >
+                                            <RefreshCwIcon
+                                                class="mr-2 h-5 w-5"
+                                            />
+                                            Refresh Pages
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            @click="
+                                                confirmDisconnect(
+                                                    getConnectedAccount(
+                                                        platform.provider,
+                                                    ),
+                                                )
+                                            "
+                                            :disabled="disconnecting"
+                                            class="hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                        >
+                                            Disconnect
+                                        </Button>
+                                    </div>
                                 </div>
 
-                                <Button
-                                    class="btn-primary w-full py-4 text-base font-semibold hover-glow"
-                                    @click="connectAccount(platform.provider)"
-                                    :disabled="loading"
-                                >
-                                    <PlusIcon class="mr-3 h-5 w-5" />
-                                    Connect {{ platform.name }}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                <!-- Not Connected State -->
+                                <div v-else class="space-y-6">
+                                    <div>
+                                        <h4
+                                            class="text-headline-4 mb-4 font-semibold text-neutral-900 dark:text-white"
+                                        >
+                                            Features:
+                                        </h4>
+                                        <ul class="space-y-3">
+                                            <li
+                                                v-for="feature in platform.features"
+                                                :key="feature"
+                                                class="text-body-large flex items-center gap-3 text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                <div
+                                                    class="bg-brand-primary h-2 w-2 rounded-full"
+                                                ></div>
+                                                {{ feature }}
+                                            </li>
+                                        </ul>
+                                    </div>
 
-                <!-- Help Section -->
-                <div class="card-elevated relative overflow-hidden mt-12 animate-slide-up group hover:scale-[1.01] transition-all duration-300">
-                    <div class="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-amber-500 to-orange-500"></div>
-                    <div class="mb-6">
-                        <h2 class="text-headline-1 mb-3 text-neutral-900 dark:text-white">Need Help?</h2>
-                        <p class="text-body-large text-neutral-600 dark:text-neutral-400">
-                            Learn more about connecting your social media accounts
-                        </p>
-                    </div>
-                    <div class="grid gap-6 md:grid-cols-2">
-                        <div class="flex items-start gap-4">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
-                                <ExternalLinkIcon class="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 class="text-headline-4 font-semibold text-neutral-900 dark:text-white mb-2">
-                                    Developer Accounts
-                                </h3>
-                                <p class="text-body text-neutral-600 dark:text-neutral-400">
-                                    You'll need developer accounts for each platform to connect them.
-                                </p>
+                                    <Button
+                                        class="btn-primary hover-glow w-full py-4 text-base font-semibold"
+                                        @click="
+                                            connectAccount(platform.provider)
+                                        "
+                                        :disabled="loading"
+                                    >
+                                        <PlusIcon class="mr-3 h-5 w-5" />
+                                        Connect {{ platform.name }}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-start gap-4">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
-                                <ExternalLinkIcon class="h-5 w-5 text-white" />
+                    </div>
+
+                    <!-- Help Section -->
+                    <div
+                        class="card-elevated animate-slide-up group relative mt-12 overflow-hidden transition-all duration-300 hover:scale-[1.01]"
+                    >
+                        <div
+                            class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-orange-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                        ></div>
+                        <div class="mb-6">
+                            <h2
+                                class="text-headline-1 mb-3 text-neutral-900 dark:text-white"
+                            >
+                                Need Help?
+                            </h2>
+                            <p
+                                class="text-body-large text-neutral-600 dark:text-neutral-400"
+                            >
+                                Learn more about connecting your social media
+                                accounts
+                            </p>
+                        </div>
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg"
+                                >
+                                    <ExternalLinkIcon
+                                        class="h-5 w-5 text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-headline-4 mb-2 font-semibold text-neutral-900 dark:text-white"
+                                    >
+                                        Developer Accounts
+                                    </h3>
+                                    <p
+                                        class="text-body text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        You'll need developer accounts for each
+                                        platform to connect them.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-headline-4 font-semibold text-neutral-900 dark:text-white mb-2">
-                                    Permissions
-                                </h3>
-                                <p class="text-body text-neutral-600 dark:text-neutral-400">
-                                    We only request permissions needed for posting and analytics.
-                                </p>
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg"
+                                >
+                                    <ExternalLinkIcon
+                                        class="h-5 w-5 text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-headline-4 mb-2 font-semibold text-neutral-900 dark:text-white"
+                                    >
+                                        Permissions
+                                    </h3>
+                                    <p
+                                        class="text-body text-neutral-600 dark:text-neutral-400"
+                                    >
+                                        We only request permissions needed for
+                                        posting and analytics.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
         </div>
 
         <!-- Disconnect Confirmation Dialog -->

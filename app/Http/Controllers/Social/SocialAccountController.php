@@ -15,15 +15,15 @@ class SocialAccountController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         $accounts = $user->socialAccounts()
             ->with('user')
             ->get()
             ->map(function ($account) {
                 return [
                     'id' => $account->id,
-                    'provider' => $account->provider,
-                    'provider_name' => $this->getProviderName($account->provider),
+                    'platform' => $account->platform,
+                    'provider_name' => $this->getProviderName($account->platform),
                     'username' => $account->username,
                     'display_name' => $account->display_name,
                     'avatar' => $account->avatar,
@@ -32,6 +32,8 @@ class SocialAccountController extends Controller
                     'connected_at' => $account->created_at->diffForHumans(),
                 ];
             });
+
+
 
         return inertia('Social/Accounts', [
             'accounts' => $accounts,
