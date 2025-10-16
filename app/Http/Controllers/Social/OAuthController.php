@@ -7,6 +7,7 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class OAuthController extends Controller
@@ -18,10 +19,28 @@ class OAuthController extends Controller
     {
         $this->validateProvider($provider);
 
-        // Instagram uses Facebook's OAuth driver
-        $driver = $provider === 'instagram' ? 'facebook' : $provider;
+        if ($provider === 'instagram') {
+            // For Instagram, build the Facebook OAuth URL manually with Instagram callback
+            $clientId = config('services.facebook.client_id');
+            $redirectUri = config('services.instagram.redirect');
+            $scopes = implode(',', $this->getScopes('instagram'));
+            $state = Str::random(40);
+            
+            // Store state in session
+            session(['instagram_oauth_state' => $state]);
+            
+            $url = "https://www.facebook.com/v18.0/dialog/oauth?" . http_build_query([
+                'client_id' => $clientId,
+                'redirect_uri' => $redirectUri,
+                'scope' => $scopes,
+                'response_type' => 'code',
+                'state' => $state,
+            ]);
+            
+            return redirect($url);
+        }
 
-        return Socialite::driver($driver)
+        return Socialite::driver($provider)
             ->scopes($this->getScopes($provider))
             ->with($this->getAdditionalParameters($provider))
             ->redirect();
@@ -35,22 +54,45 @@ class OAuthController extends Controller
         $this->validateProvider($provider);
 
         try {
-            // Instagram uses Facebook's OAuth driver
-            $driver = $provider === 'instagram' ? 'facebook' : $provider;
-            $socialUser = Socialite::driver($driver)->user();
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info("OAuth callback for provider: {$provider}");
+            
+            // For Instagram, validate state and use Facebook driver
+            if ($provider === 'instagram') {
+                // Validate state
+                if ($request->state !== session('instagram_oauth_state')) {
+                    return redirect()->route('dashboard')
+                        ->with('error', 'Invalid OAuth state. Please try again.');
+                }
+                
+                // Clear state from session
+                session()->forget('instagram_oauth_state');
+                
+                // Use Facebook driver with Instagram redirect URI
+                $socialUser = Socialite::driver('facebook')
+                    ->redirectUrl(config('services.instagram.redirect'))
+                    ->user();
+                
+                \Illuminate\Support\Facades\Log::info("Got Instagram user via Facebook driver");
+            } else {
+                $socialUser = Socialite::driver($provider)->user();
+            }
 
             $user = Auth::user();
 
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info("Processing OAuth callback for provider: {$provider}, User ID: {$user->id}");
+
             // For Facebook, we need to handle page selection
             if ($provider === 'facebook') {
+                \Illuminate\Support\Facades\Log::info("Handling Facebook page connection");
                 return $this->handleFacebookPageConnection($user, $socialUser);
             }
 
-            // For Instagram, we need to handle it through Facebook pages
-            // Instagram Business accounts require Facebook page connection
+            // For Instagram, handle the connection directly
             if ($provider === 'instagram') {
-                return redirect()->route('dashboard')
-                    ->with('info', 'Instagram accounts are connected through Facebook pages. Please connect a Facebook page first, then Instagram business accounts will be automatically discovered.');
+                \Illuminate\Support\Facades\Log::info("Handling Instagram connection");
+                return $this->handleInstagramConnection($user, $socialUser);
             }
 
             // Check if account already exists
@@ -509,30 +551,90 @@ class OAuthController extends Controller
     }
 
     /**
-     * Handle Instagram OAuth connection
+     * Handle Instagram connection
      */
     private function handleInstagramConnection(User $user, $socialUser)
     {
         try {
-            // Instagram Basic Display API provides limited user info
-            // We need to get the user's Instagram account details
-            $response = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/me", [
-                'fields' => 'id,username,account_type,media_count',
-                'access_token' => $socialUser->token
+            \Illuminate\Support\Facades\Log::info("Starting Instagram connection for user: {$user->id}");
+            // Since Instagram uses Facebook OAuth, we need to get Instagram accounts from Facebook pages
+            // First, let's try to get Instagram accounts associated with this user's Facebook pages
+            $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/me/accounts", [
+                'access_token' => $socialUser->token,
+                'fields' => 'id,name,instagram_business_account'
             ]);
 
-            if (!$response->successful()) {
-                throw new \Exception('Failed to fetch Instagram user details');
+            if ($response->successful()) {
+                $pagesData = $response->json();
+                $pages = $pagesData['data'] ?? [];
+                
+                $instagramAccounts = [];
+                foreach ($pages as $page) {
+                    if (isset($page['instagram_business_account'])) {
+                        // Get Instagram account details
+                        $igResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/{$page['instagram_business_account']}", [
+                            'access_token' => $socialUser->token,
+                            'fields' => 'id,username,account_type,media_count,followers_count'
+                        ]);
+                        
+                        if ($igResponse->successful()) {
+                            $instagramAccounts[] = $igResponse->json();
+                        }
+                    }
+                }
+
+                if (!empty($instagramAccounts)) {
+                    // Store the Instagram accounts and create a basic connection
+                    $instagramData = $instagramAccounts[0]; // Use first account for now
+                    
+                    // Create social user object with Instagram data
+                    $instagramSocialUser = new class {
+                        public function getId() { return $this->id; }
+                        public function getName() { return $this->name; }
+                        public function getNickname() { return $this->nickname; }
+                        public function getEmail() { return $this->email; }
+                        public function getAvatar() { return $this->avatar; }
+
+                        public $id;
+                        public $name;
+                        public $nickname;
+                        public $email;
+                        public $avatar;
+                        public $token;
+                        public $refreshToken;
+                        public $expiresIn;
+                        public $tokenType;
+                    };
+
+                    $instagramSocialUser->id = $instagramData['id'];
+                    $instagramSocialUser->name = $instagramData['username'] ?? 'Instagram User';
+                    $instagramSocialUser->nickname = $instagramData['username'] ?? null;
+                    $instagramSocialUser->email = $socialUser->getEmail();
+                    $instagramSocialUser->avatar = $socialUser->getAvatar();
+                    $instagramSocialUser->token = $socialUser->token;
+                    $instagramSocialUser->refreshToken = $socialUser->refreshToken;
+                    $instagramSocialUser->expiresIn = $socialUser->expiresIn;
+                    $instagramSocialUser->tokenType = $socialUser->tokenType ?? 'Bearer';
+
+                    // Check if account already exists
+                    $existingAccount = SocialAccount::where('platform', 'instagram')
+                        ->where('platform_id', $instagramData['id'])
+                        ->first();
+
+                    if ($existingAccount) {
+                        // Update existing account
+                        $this->updateSocialAccount($existingAccount, $instagramSocialUser, 'instagram');
+                    } else {
+                        // Create new social account
+                        $this->createSocialAccount($user, $instagramSocialUser, 'instagram');
+                    }
+
+                    return redirect()->route('dashboard')
+                        ->with('success', 'Instagram account connected successfully! Found ' . count($instagramAccounts) . ' Instagram business account(s).');
+                }
             }
 
-            $instagramData = $response->json();
-
-            // Check if account already exists
-            $existingAccount = SocialAccount::where('platform', 'instagram')
-                ->where('platform_id', $instagramData['id'])
-                ->first();
-
-            // Create social user object with Instagram data
+            // If no Instagram business accounts found, create a basic connection anyway
             $instagramSocialUser = new class {
                 public function getId() { return $this->id; }
                 public function getName() { return $this->name; }
@@ -551,15 +653,20 @@ class OAuthController extends Controller
                 public $tokenType;
             };
 
-            $instagramSocialUser->id = $instagramData['id'];
-            $instagramSocialUser->name = $instagramData['username'] ?? 'Instagram User';
-            $instagramSocialUser->nickname = $instagramData['username'] ?? null;
+            $instagramSocialUser->id = $socialUser->getId();
+            $instagramSocialUser->name = $socialUser->getName() ?? 'Instagram User';
+            $instagramSocialUser->nickname = $socialUser->getNickname();
             $instagramSocialUser->email = $socialUser->getEmail();
             $instagramSocialUser->avatar = $socialUser->getAvatar();
             $instagramSocialUser->token = $socialUser->token;
             $instagramSocialUser->refreshToken = $socialUser->refreshToken;
             $instagramSocialUser->expiresIn = $socialUser->expiresIn;
             $instagramSocialUser->tokenType = $socialUser->tokenType ?? 'Bearer';
+
+            // Check if account already exists
+            $existingAccount = SocialAccount::where('platform', 'instagram')
+                ->where('platform_id', $instagramSocialUser->id)
+                ->first();
 
             if ($existingAccount) {
                 // Update existing account
@@ -570,7 +677,7 @@ class OAuthController extends Controller
             }
 
             return redirect()->route('dashboard')
-                ->with('success', 'Instagram account connected successfully! Note: For full Instagram Business features, please also connect your Facebook page.');
+                ->with('success', 'Instagram account connected successfully! For full posting features, ensure your Instagram is a Business/Creator account linked to a Facebook page.');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard')
