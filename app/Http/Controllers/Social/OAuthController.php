@@ -18,8 +18,10 @@ class OAuthController extends Controller
     {
         $this->validateProvider($provider);
 
+        // Instagram uses Facebook's OAuth driver
+        $driver = $provider === 'instagram' ? 'facebook' : $provider;
 
-        return Socialite::driver($provider)
+        return Socialite::driver($driver)
             ->scopes($this->getScopes($provider))
             ->with($this->getAdditionalParameters($provider))
             ->redirect();
@@ -33,13 +35,22 @@ class OAuthController extends Controller
         $this->validateProvider($provider);
 
         try {
-            $socialUser = Socialite::driver($provider)->user();
+            // Instagram uses Facebook's OAuth driver
+            $driver = $provider === 'instagram' ? 'facebook' : $provider;
+            $socialUser = Socialite::driver($driver)->user();
 
             $user = Auth::user();
 
             // For Facebook, we need to handle page selection
             if ($provider === 'facebook') {
                 return $this->handleFacebookPageConnection($user, $socialUser);
+            }
+
+            // For Instagram, we need to handle it through Facebook pages
+            // Instagram Business accounts require Facebook page connection
+            if ($provider === 'instagram') {
+                return redirect()->route('dashboard')
+                    ->with('info', 'Instagram accounts are connected through Facebook pages. Please connect a Facebook page first, then Instagram business accounts will be automatically discovered.');
             }
 
             // Check if account already exists
@@ -170,6 +181,10 @@ class OAuthController extends Controller
     {
         return match ($provider) {
             'facebook' => [
+                'response_type' => 'code',
+                'display' => 'popup'
+            ],
+            'instagram' => [
                 'response_type' => 'code',
                 'display' => 'popup'
             ],
@@ -314,7 +329,30 @@ class OAuthController extends Controller
                 }
                 $tokens['additional_data'] = [
                     'token_type' => $socialUser->tokenType ?? 'Bearer',
+                    'api_version' => 'graph.instagram.com',
                 ];
+
+                // Try to exchange short-lived token for long-lived token
+                try {
+                    $response = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/access_token", [
+                        'grant_type' => 'ig_exchange_token',
+                        'client_secret' => config('services.instagram.client_secret'),
+                        'access_token' => $socialUser->token
+                    ]);
+
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        if (isset($data['access_token'])) {
+                            $tokens['access_token'] = $data['access_token'];
+                            if (isset($data['expires_in'])) {
+                                $tokens['expires_at'] = now()->addSeconds($data['expires_in']);
+                            }
+                            $tokens['additional_data']['long_lived'] = true;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to exchange Instagram token: ' . $e->getMessage());
+                }
                 break;
 
             case 'linkedin':
@@ -457,9 +495,86 @@ class OAuthController extends Controller
                 ->with('error', 'No Facebook pages found. Please try connecting again.');
         }
 
+        // Get existing connected Facebook pages for this user
+        $existingPageIds = SocialAccount::where('user_id', Auth::id())
+            ->where('platform', 'facebook')
+            ->pluck('platform_id')
+            ->toArray();
+
         return inertia('Social/FacebookPageSelection', [
             'pages' => $pages,
-            'userInfo' => $userInfo
+            'userInfo' => $userInfo,
+            'existingPageIds' => $existingPageIds
         ]);
+    }
+
+    /**
+     * Handle Instagram OAuth connection
+     */
+    private function handleInstagramConnection(User $user, $socialUser)
+    {
+        try {
+            // Instagram Basic Display API provides limited user info
+            // We need to get the user's Instagram account details
+            $response = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/me", [
+                'fields' => 'id,username,account_type,media_count',
+                'access_token' => $socialUser->token
+            ]);
+
+            if (!$response->successful()) {
+                throw new \Exception('Failed to fetch Instagram user details');
+            }
+
+            $instagramData = $response->json();
+
+            // Check if account already exists
+            $existingAccount = SocialAccount::where('platform', 'instagram')
+                ->where('platform_id', $instagramData['id'])
+                ->first();
+
+            // Create social user object with Instagram data
+            $instagramSocialUser = new class {
+                public function getId() { return $this->id; }
+                public function getName() { return $this->name; }
+                public function getNickname() { return $this->nickname; }
+                public function getEmail() { return $this->email; }
+                public function getAvatar() { return $this->avatar; }
+
+                public $id;
+                public $name;
+                public $nickname;
+                public $email;
+                public $avatar;
+                public $token;
+                public $refreshToken;
+                public $expiresIn;
+                public $tokenType;
+            };
+
+            $instagramSocialUser->id = $instagramData['id'];
+            $instagramSocialUser->name = $instagramData['username'] ?? 'Instagram User';
+            $instagramSocialUser->nickname = $instagramData['username'] ?? null;
+            $instagramSocialUser->email = $socialUser->getEmail();
+            $instagramSocialUser->avatar = $socialUser->getAvatar();
+            $instagramSocialUser->token = $socialUser->token;
+            $instagramSocialUser->refreshToken = $socialUser->refreshToken;
+            $instagramSocialUser->expiresIn = $socialUser->expiresIn;
+            $instagramSocialUser->tokenType = $socialUser->tokenType ?? 'Bearer';
+
+            if ($existingAccount) {
+                // Update existing account
+                $this->updateSocialAccount($existingAccount, $instagramSocialUser, 'instagram');
+            } else {
+                // Create new social account
+                $this->createSocialAccount($user, $instagramSocialUser, 'instagram');
+            }
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Instagram account connected successfully! Note: For full Instagram Business features, please also connect your Facebook page.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard')
+                ->with('error', "Failed to connect Instagram: " . $e->getMessage());
+        }
     }
 }

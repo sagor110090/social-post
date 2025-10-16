@@ -76,8 +76,23 @@ const isPlatformConnected = (provider) => {
     return connectedProviders.value.includes(provider);
 };
 
+const getConnectedAccounts = (provider) => {
+    return (
+        props.accounts?.filter((account) => account.platform === provider) || []
+    );
+};
+
 const getConnectedAccount = (provider) => {
-    return props.accounts?.find((account) => account.platform === provider);
+    // For backward compatibility, return the first account for non-Facebook platforms
+    const accounts = getConnectedAccounts(provider);
+    return accounts.length > 0 ? accounts[0] : null;
+};
+
+const getFacebookAccounts = () => {
+    return (
+        props.accounts?.filter((account) => account.platform === 'facebook') ||
+        []
+    );
 };
 
 const connectAccount = (provider) => {
@@ -299,8 +314,21 @@ onMounted(() => {
                                             ></div>
                                             <span
                                                 class="text-body font-medium text-emerald-700 dark:text-emerald-300"
-                                                >Connected</span
                                             >
+                                                <span
+                                                    v-if="
+                                                        platform.provider ===
+                                                        'facebook'
+                                                    "
+                                                >
+                                                    {{
+                                                        getFacebookAccounts()
+                                                            .length
+                                                    }}
+                                                    pages
+                                                </span>
+                                                <span v-else>Connected</span>
+                                            </span>
                                         </div>
                                         <div
                                             v-else
@@ -326,107 +354,220 @@ onMounted(() => {
                                     "
                                     class="space-y-6"
                                 >
+                                    <!-- Multiple Facebook Accounts -->
                                     <div
-                                        class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-6 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80"
+                                        v-if="platform.provider === 'facebook'"
+                                        class="space-y-4"
                                     >
                                         <div
                                             class="flex items-center justify-between"
                                         >
-                                            <div class="flex-1">
-                                                <p
-                                                    class="text-headline-3 font-semibold text-neutral-900 dark:text-white"
-                                                >
-                                                    {{
-                                                        getConnectedAccount(
-                                                            platform.provider,
-                                                        )?.display_name
-                                                    }}
-                                                </p>
-                                                <p
-                                                    class="text-body-large mt-1 text-neutral-600 dark:text-neutral-400"
-                                                >
-                                                    @{{
-                                                        getConnectedAccount(
-                                                            platform.provider,
-                                                        )?.username
-                                                    }}
-                                                </p>
+                                            <h4
+                                                class="text-headline-4 font-semibold text-neutral-900 dark:text-white"
+                                            >
+                                                Connected Facebook Pages
+                                            </h4>
+                                            <span
+                                                class="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/80 px-3 py-1 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-900/30"
+                                            >
                                                 <div
-                                                    class="mt-3 flex items-center gap-2"
+                                                    class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+                                                ></div>
+                                                <span
+                                                    class="text-body-small font-medium text-emerald-700 dark:text-emerald-300"
+                                                    >{{
+                                                        getFacebookAccounts()
+                                                            .length
+                                                    }}
+                                                    pages</span
                                                 >
-                                                    <div
-                                                        class="h-2 w-2 rounded-full bg-emerald-500"
-                                                    ></div>
+                                            </span>
+                                        </div>
+
+                                        <!-- Individual Facebook Page Cards -->
+                                        <div
+                                            v-for="account in getFacebookAccounts()"
+                                            :key="account.id"
+                                            class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-4 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80"
+                                        >
+                                            <div
+                                                class="flex items-center justify-between"
+                                            >
+                                                <div class="flex-1">
                                                     <p
-                                                        class="text-body-small text-neutral-500 dark:text-neutral-500"
+                                                        class="text-body-large font-semibold text-neutral-900 dark:text-white"
                                                     >
-                                                        Connected
                                                         {{
-                                                            formatDate(
-                                                                getConnectedAccount(
-                                                                    platform.provider,
-                                                                )?.connected_at,
-                                                            )
+                                                            account.display_name
                                                         }}
                                                     </p>
+                                                    <p
+                                                        class="text-body mt-1 text-neutral-600 dark:text-neutral-400"
+                                                    >
+                                                        @{{ account.username }}
+                                                    </p>
+                                                    <div
+                                                        class="mt-2 flex items-center gap-2"
+                                                    >
+                                                        <div
+                                                            class="h-2 w-2 rounded-full bg-emerald-500"
+                                                        ></div>
+                                                        <p
+                                                            class="text-body-small text-neutral-500 dark:text-neutral-500"
+                                                        >
+                                                            Connected
+                                                            {{
+                                                                formatDate(
+                                                                    account.connected_at,
+                                                                )
+                                                            }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        @click="
+                                                            confirmDisconnect(
+                                                                account,
+                                                            )
+                                                        "
+                                                        :disabled="
+                                                            disconnecting
+                                                        "
+                                                        class="hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                                    >
+                                                        Disconnect
+                                                    </Button>
                                                 </div>
                                             </div>
-                                            <img
-                                                v-if="
-                                                    getConnectedAccount(
+                                        </div>
+
+                                        <!-- Facebook-specific actions -->
+                                        <div class="flex gap-3">
+                                            <Button
+                                                variant="outline"
+                                                @click="
+                                                    refreshAccount(
                                                         platform.provider,
-                                                    )?.avatar
+                                                    )
                                                 "
-                                                :src="
-                                                    getConnectedAccount(
+                                                :disabled="loading"
+                                                class="hover-glow"
+                                            >
+                                                <RefreshCwIcon
+                                                    class="mr-2 h-5 w-5"
+                                                />
+                                                Refresh All Pages
+                                            </Button>
+
+                                            <Button
+                                                variant="outline"
+                                                @click="
+                                                    connectAccount(
                                                         platform.provider,
-                                                    ).avatar
+                                                    )
                                                 "
-                                                :alt="
-                                                    getConnectedAccount(
-                                                        platform.provider,
-                                                    ).display_name
-                                                "
-                                                class="h-14 w-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-neutral-800"
-                                            />
+                                                :disabled="loading"
+                                                class="hover-glow"
+                                            >
+                                                <PlusIcon
+                                                    class="mr-2 h-5 w-5"
+                                                />
+                                                Connect Another Page
+                                            </Button>
                                         </div>
                                     </div>
 
-                                    <!-- Platform-specific actions -->
-                                    <div class="flex gap-3">
-                                        <Button
-                                            v-if="
-                                                platform.provider === 'facebook'
-                                            "
-                                            variant="outline"
-                                            @click="
-                                                refreshAccount(
-                                                    platform.provider,
-                                                )
-                                            "
-                                            :disabled="loading"
-                                            class="hover-glow"
+                                    <!-- Single Account for Other Platforms -->
+                                    <div v-else>
+                                        <div
+                                            class="rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-neutral-50/80 to-white/80 p-6 backdrop-blur-sm dark:border-neutral-700/60 dark:from-neutral-800/80 dark:to-neutral-900/80"
                                         >
-                                            <RefreshCwIcon
-                                                class="mr-2 h-5 w-5"
-                                            />
-                                            Refresh Pages
-                                        </Button>
+                                            <div
+                                                class="flex items-center justify-between"
+                                            >
+                                                <div class="flex-1">
+                                                    <p
+                                                        class="text-headline-3 font-semibold text-neutral-900 dark:text-white"
+                                                    >
+                                                        {{
+                                                            getConnectedAccount(
+                                                                platform.provider,
+                                                            )?.display_name
+                                                        }}
+                                                    </p>
+                                                    <p
+                                                        class="text-body-large mt-1 text-neutral-600 dark:text-neutral-400"
+                                                    >
+                                                        @{{
+                                                            getConnectedAccount(
+                                                                platform.provider,
+                                                            )?.username
+                                                        }}
+                                                    </p>
+                                                    <div
+                                                        class="mt-3 flex items-center gap-2"
+                                                    >
+                                                        <div
+                                                            class="h-2 w-2 rounded-full bg-emerald-500"
+                                                        ></div>
+                                                        <p
+                                                            class="text-body-small text-neutral-500 dark:text-neutral-500"
+                                                        >
+                                                            Connected
+                                                            {{
+                                                                formatDate(
+                                                                    getConnectedAccount(
+                                                                        platform.provider,
+                                                                    )
+                                                                        ?.connected_at,
+                                                                )
+                                                            }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <img
+                                                    v-if="
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        )?.avatar
+                                                    "
+                                                    :src="
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        ).avatar
+                                                    "
+                                                    :alt="
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        ).display_name
+                                                    "
+                                                    class="h-14 w-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-neutral-800"
+                                                />
+                                            </div>
+                                        </div>
 
-                                        <Button
-                                            variant="outline"
-                                            @click="
-                                                confirmDisconnect(
-                                                    getConnectedAccount(
-                                                        platform.provider,
-                                                    ),
-                                                )
-                                            "
-                                            :disabled="disconnecting"
-                                            class="hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                                        >
-                                            Disconnect
-                                        </Button>
+                                        <!-- Platform-specific actions -->
+                                        <div class="flex gap-3">
+                                            <Button
+                                                variant="outline"
+                                                @click="
+                                                    confirmDisconnect(
+                                                        getConnectedAccount(
+                                                            platform.provider,
+                                                        ),
+                                                    )
+                                                "
+                                                :disabled="disconnecting"
+                                                class="hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                            >
+                                                Disconnect
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 
