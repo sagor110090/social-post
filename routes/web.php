@@ -2,10 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome');
-})->name('home');
+Volt::route('/', 'pages.home')->name('home');
+Volt::route('/about', 'pages.about')->name('about');
+Volt::route('/features', 'pages.features')->name('features');
+Volt::route('/contact', 'pages.contact')->name('contact');
+Volt::route('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
+Volt::route('/terms', 'pages.terms')->name('terms');
+
+
 
 Route::get('dashboard', [\App\Http\Controllers\Dashboard\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

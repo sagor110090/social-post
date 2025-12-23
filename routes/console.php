@@ -1,6 +1,8 @@
 <?php
 
+use App\Console\Commands\DiagnoseInstagramOAuth;
 use App\Console\Commands\SchedulePostsCommand;
+use App\Console\Commands\TestInstagramOAuthUrl;
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;

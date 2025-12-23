@@ -20,22 +20,41 @@ class OAuthController extends Controller
         $this->validateProvider($provider);
 
         if ($provider === 'instagram') {
-            // For Instagram, build the Facebook OAuth URL manually with Instagram callback
-            $clientId = config('services.facebook.client_id');
+            // Use Instagram Basic Display API directly
+            $clientId = config('services.instagram.client_id');
             $redirectUri = config('services.instagram.redirect');
             $scopes = implode(',', $this->getScopes('instagram'));
             $state = Str::random(40);
 
+            // Validate configuration before redirect
+            if (!$clientId) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Instagram Client ID is missing. Please check your configuration.');
+            }
+
+            if (!$redirectUri) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Instagram Redirect URI is missing. Please check your configuration.');
+            }
+
             // Store state in session
             session(['instagram_oauth_state' => $state]);
 
-            $url = "https://www.facebook.com/v18.0/dialog/oauth?" . http_build_query([
-                'client_id' => $clientId,
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info("Instagram OAuth redirect:");
+            \Illuminate\Support\Facades\Log::info("Client ID: " . $clientId);
+            \Illuminate\Support\Facades\Log::info("Redirect URI: " . $redirectUri);
+            \Illuminate\Support\Facades\Log::info("Scopes: " . $scopes);
+
+            $url = "https://api.instagram.com/oauth/authorize?" . http_build_query([
+                'app_id' => $clientId,
                 'redirect_uri' => $redirectUri,
                 'scope' => $scopes,
                 'response_type' => 'code',
                 'state' => $state,
             ]);
+
+            \Illuminate\Support\Facades\Log::info("Instagram OAuth URL: " . $url);
 
             return redirect($url);
         }
@@ -58,13 +77,11 @@ class OAuthController extends Controller
             \Illuminate\Support\Facades\Log::info("OAuth callback for provider: {$provider}");
             \Illuminate\Support\Facades\Log::info("Request data: " . json_encode($request->all()));
 
-            // For Instagram, validate state and use Facebook driver
+            // For Instagram, validate state and use Instagram Basic Display API
             if ($provider === 'instagram') {
                 \Illuminate\Support\Facades\Log::info("Processing Instagram callback");
                 \Illuminate\Support\Facades\Log::info("Request state: " . $request->state);
                 \Illuminate\Support\Facades\Log::info("Session state: " . session('instagram_oauth_state'));
-
-                // dd(session('instagram_oauth_state'), $request->state);
 
                 // Validate state
                 if ($request->state !== session('instagram_oauth_state')) {
@@ -76,37 +93,91 @@ class OAuthController extends Controller
                 // Clear state from session
                 session()->forget('instagram_oauth_state');
 
-                \Illuminate\Support\Facades\Log::info("State validated, getting user from Facebook driver");
+                \Illuminate\Support\Facades\Log::info("State validated, exchanging code for token");
 
-                // Exchange the authorization code for an access token manually
-                try {
-                    $code = $request->code;
-                    $clientId = config('services.facebook.client_id');
-                    $clientSecret = config('services.facebook.client_secret');
-                    $redirectUri = config('services.instagram.redirect');
+                    // Exchange the authorization code for an access token using Instagram Basic Display API
+                    try {
+                        $code = $request->code;
+                        $clientId = config('services.instagram.client_id');
+                        $clientSecret = config('services.instagram.client_secret');
+                        $redirectUri = config('services.instagram.redirect');
 
-                    \Illuminate\Support\Facades\Log::info("Exchanging code for token");
+                        \Illuminate\Support\Facades\Log::info("Exchanging code for Instagram token");
+                        \Illuminate\Support\Facades\Log::info("Code: " . substr($code, 0, 20) . "...");
+                        \Illuminate\Support\Facades\Log::info("Client ID: " . $clientId);
+                        \Illuminate\Support\Facades\Log::info("Redirect URI: " . $redirectUri);
 
-                    // Exchange code for token
-                    $tokenResponse = \Illuminate\Support\Facades\Http::asForm()->post("https://graph.facebook.com/v18.0/oauth/access_token", [
-                        'client_id' => $clientId,
-                        'client_secret' => $clientSecret,
-                        'redirect_uri' => $redirectUri,
-                        'code' => $code,
-                    ]);
+                        // Exchange code for short-lived token
+                        $tokenResponse = \Illuminate\Support\Facades\Http::asForm()->post("https://api.instagram.com/oauth/access_token", [
+                            'app_id' => $clientId,
+                            'app_secret' => $clientSecret,
+                            'grant_type' => 'authorization_code',
+                            'redirect_uri' => $redirectUri,
+                            'code' => $code,
+                        ]);
 
-                    if (!$tokenResponse->successful()) {
-                        throw new \Exception('Failed to exchange code for token: ' . $tokenResponse->body());
-                    }
+                        \Illuminate\Support\Facades\Log::info("Token exchange response status: " . $tokenResponse->status());
+                        \Illuminate\Support\Facades\Log::info("Token exchange response: " . $tokenResponse->body());
+
+                        if (!$tokenResponse->successful()) {
+                            $errorData = $tokenResponse->json();
+                            $errorMessage = $errorData['error_message'] ?? $tokenResponse->body();
+                            $errorType = $errorData['error_type'] ?? 'unknown';
+                            
+                            \Illuminate\Support\Facades\Log::error("Instagram token exchange failed:");
+                            \Illuminate\Support\Facades\Log::error("Error Type: " . $errorType);
+                            \Illuminate\Support\Facades\Log::error("Error Message: " . $errorMessage);
+                            
+                            // Provide specific guidance for common errors
+                            if (str_contains($errorMessage, 'Invalid platform app')) {
+                                $fixUrl = url('/docs/instagram-invalid-platform-app-fix');
+                                throw new \Exception(
+                                    "Facebook App is not configured for Instagram Basic Display API. " .
+                                    "Please follow the fix guide: {$fixUrl}. " .
+                                    "Common fixes: 1) Add Instagram Basic Display product, 2) Check app mode, 3) Verify redirect URI."
+                                );
+                            } elseif (str_contains($errorMessage, 'Invalid redirect URI')) {
+                                $configuredUri = config('services.instagram.redirect');
+                                throw new \Exception(
+                                    "Redirect URI mismatch. Configured: {$configuredUri}. " .
+                                    "Ensure this exact URI is added in Facebook App → Instagram Basic Display → Settings."
+                                );
+                            } elseif (str_contains($errorMessage, 'Invalid authorization code')) {
+                                throw new \Exception('Authorization code expired or invalid. Please try OAuth again.');
+                            } elseif (str_contains($errorMessage, 'OAuth Exception')) {
+                                throw new \Exception('Facebook OAuth error. Check app permissions and configuration.');
+                            } else {
+                                throw new \Exception('Failed to exchange code for token: ' . $errorMessage);
+                            }
+                        }
 
                     $tokenData = $tokenResponse->json();
-                    $accessToken = $tokenData['access_token'];
+                    $shortLivedToken = $tokenData['access_token'];
+
+                    \Illuminate\Support\Facades\Log::info("Got short-lived token, exchanging for long-lived token");
+
+                    // Exchange short-lived token for long-lived token
+                    $longLivedTokenResponse = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/access_token", [
+                        'grant_type' => 'ig_exchange_token',
+                        'client_secret' => $clientSecret,
+                        'access_token' => $shortLivedToken,
+                    ]);
+
+                    if (!$longLivedTokenResponse->successful()) {
+                        \Illuminate\Support\Facades\Log::warning("Failed to exchange for long-lived token, using short-lived token");
+                        $accessToken = $shortLivedToken;
+                        $expiresIn = $tokenData['expires_in'] ?? 3600;
+                    } else {
+                        $longLivedData = $longLivedTokenResponse->json();
+                        $accessToken = $longLivedData['access_token'];
+                        $expiresIn = $longLivedData['expires_in'] ?? 60 * 24 * 60; // 60 days default
+                    }
 
                     \Illuminate\Support\Facades\Log::info("Got access token, fetching user info");
 
                     // Get user info
-                    $userResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/me", [
-                        'fields' => 'id,name,email,picture',
+                    $userResponse = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/me", [
+                        'fields' => 'id,username,account_type,media_count',
                         'access_token' => $accessToken,
                     ]);
 
@@ -136,13 +207,13 @@ class OAuthController extends Controller
                     };
 
                     $socialUser->id = $userData['id'];
-                    $socialUser->name = $userData['name'] ?? null;
-                    $socialUser->nickname = null;
-                    $socialUser->email = $userData['email'] ?? null;
-                    $socialUser->avatar = $userData['picture']['data']['url'] ?? null;
+                    $socialUser->name = $userData['username'] ?? null;
+                    $socialUser->nickname = $userData['username'] ?? null;
+                    $socialUser->email = null; // Instagram Basic Display API doesn't provide email
+                    $socialUser->avatar = null; // We'll fetch this later if needed
                     $socialUser->token = $accessToken;
                     $socialUser->refreshToken = null;
-                    $socialUser->expiresIn = $tokenData['expires_in'] ?? null;
+                    $socialUser->expiresIn = $expiresIn;
                     $socialUser->tokenType = 'Bearer';
 
                     \Illuminate\Support\Facades\Log::info("Created Instagram social user object");
@@ -272,9 +343,8 @@ class OAuthController extends Controller
                 'email'
             ],
             'instagram' => [
-                'instagram_basic',
-                'instagram_content_publish',
-                'public_profile'
+                'user_profile',
+                'user_media'
             ],
             'linkedin' => [
                 'r_liteprofile',
@@ -449,29 +519,8 @@ class OAuthController extends Controller
                 $tokens['additional_data'] = [
                     'token_type' => $socialUser->tokenType ?? 'Bearer',
                     'api_version' => 'graph.instagram.com',
+                    'basic_display_api' => true,
                 ];
-
-                // Try to exchange short-lived token for long-lived token
-                try {
-                    $response = \Illuminate\Support\Facades\Http::get("https://graph.instagram.com/access_token", [
-                        'grant_type' => 'ig_exchange_token',
-                        'client_secret' => config('services.instagram.client_secret'),
-                        'access_token' => $socialUser->token
-                    ]);
-
-            if ($response && $response->successful()) {
-                        $data = $response->json();
-                        if (isset($data['access_token'])) {
-                            $tokens['access_token'] = $data['access_token'];
-                            if (isset($data['expires_in'])) {
-                                $tokens['expires_at'] = now()->addSeconds($data['expires_in']);
-                            }
-                            $tokens['additional_data']['long_lived'] = true;
-                        }
-                    }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Failed to exchange Instagram token: ' . $e->getMessage());
-                }
                 break;
 
             case 'linkedin':
@@ -728,89 +777,21 @@ class OAuthController extends Controller
             \Illuminate\Support\Facades\Log::info("Starting Instagram connection for user: {$user->id}");
             \Illuminate\Support\Facades\Log::info("Access token: " . substr($socialUser->token, 0, 20) . "...");
 
-            // Since Instagram uses Facebook OAuth, we need to get Instagram accounts from Facebook pages
-            // First, let's try to get Instagram accounts associated with this user's Facebook pages
-            try {
-                $response = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/me/accounts", [
-                    'access_token' => $socialUser->token,
-                    'fields' => 'id,name,instagram_business_account'
-                ]);
+            // Check if account already exists
+            $existingAccount = SocialAccount::where('platform', 'instagram')
+                ->where('platform_id', $socialUser->getId())
+                ->first();
 
-                \Illuminate\Support\Facades\Log::info("Facebook pages response status: " . $response->status());
-
-                if (!$response->successful()) {
-                    \Illuminate\Support\Facades\Log::error("Facebook pages API error: " . $response->body());
-                    throw new \Exception('Failed to fetch Facebook pages: ' . $response->body());
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Exception in Facebook pages call: " . $e->getMessage());
-                // Continue with fallback connection
-                $response = null;
-            }
-
-            if ($response->successful()) {
-                $pagesData = $response->json();
-                $pages = $pagesData['data'] ?? [];
-
-                \Illuminate\Support\Facades\Log::info("Found " . count($pages) . " Facebook pages");
-
-                $instagramAccounts = [];
-                foreach ($pages as $page) {
-                    \Illuminate\Support\Facades\Log::info("Checking page: " . $page['name'] . " (ID: " . $page['id'] . ")");
-
-                    if (isset($page['instagram_business_account'])) {
-                        \Illuminate\Support\Facades\Log::info("Found Instagram business account: " . $page['instagram_business_account']);
-
-                        // Get Instagram account details
-                        $igResponse = \Illuminate\Support\Facades\Http::get("https://graph.facebook.com/v18.0/{$page['instagram_business_account']}", [
-                            'access_token' => $socialUser->token,
-                            'fields' => 'id,username,account_type,media_count,followers_count'
-                        ]);
-
-                        \Illuminate\Support\Facades\Log::info("Instagram account response status: " . $igResponse->status());
-
-                        if ($igResponse->successful()) {
-                            $igData = $igResponse->json();
-                            $instagramAccounts[] = $igData;
-                            \Illuminate\Support\Facades\Log::info("Added Instagram account: @" . ($igData['username'] ?? 'unknown'));
-                        } else {
-                            \Illuminate\Support\Facades\Log::error("Failed to fetch Instagram account: " . $igResponse->body());
-                        }
-                    } else {
-                        \Illuminate\Support\Facades\Log::info("No Instagram business account found for page: " . $page['name']);
-                    }
-                }
-
-                \Illuminate\Support\Facades\Log::info("Total Instagram accounts found: " . count($instagramAccounts));
-
-                if (!empty($instagramAccounts)) {
-                    // Store the Instagram accounts and user token in session for selection
-                    session([
-                        'instagram_user_token' => $socialUser->token,
-                        'instagram_accounts' => $instagramAccounts,
-                        'instagram_user_info' => [
-                            'id' => $socialUser->getId(),
-                            'name' => $socialUser->getName(),
-                            'email' => $socialUser->getEmail(),
-                            'avatar' => $socialUser->getAvatar(),
-                        ]
-                    ]);
-
-                    // Redirect to Instagram account selection view
-                    \Illuminate\Support\Facades\Log::info("Redirecting to Instagram account selection");
-                    return redirect()->route('instagram.account.selection');
-                } else {
-                    \Illuminate\Support\Facades\Log::info("No Instagram accounts found, falling back to basic connection");
-                }
+            if ($existingAccount) {
+                // Update existing account
+                $this->updateSocialAccount($existingAccount, $socialUser, 'instagram');
             } else {
-                \Illuminate\Support\Facades\Log::error("Failed to fetch Facebook pages: " . $response->body());
+                // Create new social account
+                $this->createSocialAccount($user, $socialUser, 'instagram');
             }
-
-            // If no Instagram business accounts found, show an informative message
-            \Illuminate\Support\Facades\Log::info("No Instagram business accounts found, showing user message");
 
             return redirect()->route('dashboard')
-                ->with('info', 'To connect Instagram, you need an Instagram Business or Creator account linked to a Facebook page. Please convert your Instagram account to a Business/Creator account and link it to a Facebook page, then try connecting again.');
+                ->with('success', 'Instagram account (@' . $socialUser->getNickname() . ') connected successfully!');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard')

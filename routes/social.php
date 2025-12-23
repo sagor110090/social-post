@@ -30,6 +30,22 @@ Route::prefix('oauth')->group(function () {
     
     // Save Instagram account selection
     Route::post('/instagram/save-account', [OAuthController::class, 'saveInstagramAccount'])->name('oauth.instagram.save-account')->middleware('auth');
+    
+    // Instagram Basic Display required endpoints
+    Route::get('/instagram/deauthorize', function () {
+        // Handle when users deauthorize the app
+        \Illuminate\Support\Facades\Log::info('Instagram deauthorization callback received');
+        return response()->json(['status' => 'success']);
+    })->name('oauth.instagram.deauthorize');
+    
+    Route::post('/instagram/data-deletion', function () {
+        // Handle data deletion requests (required for App Review)
+        \Illuminate\Support\Facades\Log::info('Instagram data deletion request received');
+        return response()->json([
+            'url' => url('/privacy-policy'),
+            'confirmation_code' => 'user_data_deleted'
+        ]);
+    })->name('oauth.instagram.data-deletion');
 });
 
 // Facebook Routes

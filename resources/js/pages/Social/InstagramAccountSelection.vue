@@ -120,9 +120,9 @@ const formatNumber = (num: number) => {
                         <p
                             class="text-body-large mx-auto max-w-2xl text-neutral-600 dark:text-neutral-400"
                         >
-                            Choose an Instagram Business account to connect.
-                            Accounts already connected are shown with a
-                            "Connected" badge.
+                            Choose an Instagram account to connect. Accounts
+                            already connected are shown with a "Connected"
+                            badge.
                         </p>
                     </div>
 
@@ -175,13 +175,13 @@ const formatNumber = (num: number) => {
                             <p
                                 class="text-body-large text-neutral-600 dark:text-neutral-400"
                             >
-                                No Instagram Business accounts found
+                                No Instagram accounts found
                             </p>
                             <p
                                 class="text-body mt-2 text-neutral-500 dark:text-neutral-500"
                             >
-                                Make sure you have Instagram Business accounts
-                                linked to your Facebook pages.
+                                Please try connecting your Instagram account
+                                again.
                             </p>
                         </div>
 

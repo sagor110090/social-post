@@ -115,17 +115,40 @@ php artisan test tests/Feature/Auth/InstagramOAuthTest.php
 
 ### Common Issues
 
-1. "Invalid redirect URI" - Check Facebook app settings
-2. "Missing permissions" - Verify app has required scopes
-3. "Token expired" - User needs to reconnect
-4. "No business accounts found" - Connect Facebook page first
+1. **"Invalid platform app"** - App not configured for Instagram Basic Display API
+2. "Invalid redirect URI" - Check Facebook app settings
+3. "Missing permissions" - Verify app has required scopes
+4. "Token expired" - User needs to reconnect
+5. "No business accounts found" - Connect Facebook page first
 
 ### Debug Steps
 
-1. Check Laravel logs: `storage/logs/laravel.log`
-2. Verify environment variables
-3. Test OAuth flow with Facebook's [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
-4. Check token status in database
+1. Run diagnostic command: `php artisan instagram:diagnose-oauth`
+2. Check Laravel logs: `storage/logs/laravel.log`
+3. Verify environment variables
+4. Test OAuth flow with Facebook's [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
+5. Check token status in database
+
+### "Invalid Platform App" Fix
+
+If you encounter "Invalid platform app" error:
+
+1. **Add Instagram Basic Display Product**:
+    - Go to your Facebook App dashboard
+    - Click "Add Product" → "Instagram Basic Display"
+    - Configure redirect URI: `https://yourdomain.com/oauth/instagram/callback`
+
+2. **Remove Conflicting Products**:
+    - Remove "Facebook Login" if not needed
+    - Ensure app is configured for Instagram, not Facebook Graph API
+
+3. **Check App Mode**:
+    - Set to "Development" for testing
+    - Add test users in App Settings
+
+4. **Verify Permissions**:
+    - Add `user_profile` and `user_media` permissions
+    - Submit for review if needed for production
 
 ## Security Considerations
 

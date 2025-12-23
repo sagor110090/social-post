@@ -47,8 +47,8 @@ const platforms = [
         provider: 'instagram',
         icon: InstagramIcon,
         color: 'bg-pink-600',
-        description: 'Connect Instagram business accounts',
-        features: ['Image posting', 'Stories', 'Business insights'],
+        description: 'Connect your Instagram account',
+        features: ['Image posting', 'Stories', 'Media management'],
     },
     {
         name: 'LinkedIn',
